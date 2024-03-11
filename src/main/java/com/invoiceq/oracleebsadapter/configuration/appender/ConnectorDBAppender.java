@@ -19,6 +19,7 @@ public class ConnectorDBAppender extends DBAppenderBase<ILoggingEvent> {
         insertSQL = buildInsertSQL();
         super.start();
     }
+
     @Override
     protected Method getGeneratedKeysMethod() {
         return null;
@@ -37,12 +38,11 @@ public class ConnectorDBAppender extends DBAppenderBase<ILoggingEvent> {
 
     private void bindLoggingEventWithInsertStatement(PreparedStatement stmt, ILoggingEvent event) throws SQLException {
         int length = event.getArgumentArray().length;
-        for(int i=0;i<6 ;i++){
-            if(i<length){
-                stmt.setString(i+1, asStringTruncatedTo254(event.getArgumentArray()[i]));
-            }
-            else {
-                stmt.setString(i+1,null);
+        for (int i = 0; i < 6; i++) {
+            if (i < length) {
+                stmt.setString(i + 1, asStringTruncatedTo254(event.getArgumentArray()[i]));
+            } else {
+                stmt.setString(i + 1, null);
             }
         }
         stmt.setString(7, event.getFormattedMessage());

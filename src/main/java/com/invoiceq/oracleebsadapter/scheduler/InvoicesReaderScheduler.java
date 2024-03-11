@@ -12,15 +12,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 
-
 @Component
 public class InvoicesReaderScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InvoicesReaderScheduler.class);
     @Autowired
     private OutwardInvoiceService outwardInvoiceService;
-
-//    @Autowired
-//    private ThreadPoolTaskExecutor taskExecutor;
 
     @Autowired
     private CreditNoteService creditNoteService;
@@ -40,7 +36,7 @@ public class InvoicesReaderScheduler {
     private ThreadPoolTaskExecutor creditTaskExecutor;
 
     @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
-    public void invoiceReader(){
+    public void invoiceReader() {
         if (outwardTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             outwardTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned invoices");
@@ -57,7 +53,7 @@ public class InvoicesReaderScheduler {
 
 
     @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
-    public void creditReader(){
+    public void creditReader() {
         if (creditTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             creditTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned credit notes");
@@ -70,7 +66,6 @@ public class InvoicesReaderScheduler {
             });
         }
     }
-
 
 
 }

@@ -1,7 +1,6 @@
 package com.invoiceq.oracleebsadapter.repository;
 
 import com.invoiceq.oracleebsadapter.model.InvoiceLine;
-import com.invoiceq.oracleebsadapter.model.InvoiceLineEmbeddable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,10 +15,6 @@ public interface InvoiceLineReposiroty extends JpaRepository<InvoiceLine, Long> 
     @Transactional
     @Modifying
     @Query("update InvoiceLine i  set i.productCode = :productCode where i.customerTrxId = :customerTrxId and i.seqId = :seqid and i.lineNumber = :lineNumber")
-    void updateProductCodeByCustomerTrxIdAndSeqIdAndLineNumber(@Param("productCode") String productCode, @Param("customerTrxId") Long customerTrxId,@Param("seqid")Long seqid,@Param("lineNumber")Long lineNumber);
+    void updateProductCodeByCustomerTrxIdAndSeqIdAndLineNumber(@Param("productCode") String productCode, @Param("customerTrxId") Long customerTrxId, @Param("seqid") Long seqid, @Param("lineNumber") Long lineNumber);
 
-//    @Transactional
-//    @Modifying
-//    @Query("update InvoiceLine i  set i.productCode = :productCode where i.invoiceLineEmbeddable = :invoiceLineEmbeddable")
-//    void updateProductCodeByInvoiceLineEmbeddable(@Param("productCode") String productCode, @Param("invoiceLineEmbeddable") InvoiceLineEmbeddable invoiceLineEmbeddable);
 }

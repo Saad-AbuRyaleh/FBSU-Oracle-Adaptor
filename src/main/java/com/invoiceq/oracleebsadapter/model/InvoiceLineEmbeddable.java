@@ -16,13 +16,13 @@ import java.io.Serializable;
 @Builder
 public class InvoiceLineEmbeddable implements Serializable {
 
-    @Column(name= "CUSTOMER_TRX_ID" , nullable = false)
+    @Column(name = "CUSTOMER_TRX_ID", nullable = false)
     private Long customerTrxId;
 
-    @Column(name = "SEQ_ID" , nullable = false)
+    @Column(name = "SEQ_ID", nullable = false)
     private Long seqId;
 
-    @Column(name = "LINE_NUMBER" , nullable = false)
+    @Column(name = "LINE_NUMBER", nullable = false)
     private Long lineNumber;
 
 }

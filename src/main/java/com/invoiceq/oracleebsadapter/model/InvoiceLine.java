@@ -4,7 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -15,19 +18,16 @@ import java.util.Objects;
 @AllArgsConstructor
 public class InvoiceLine {
     @Id
-    @Column(name = "ID" , nullable = false)
+    @Column(name = "ID", nullable = false)
     private Long id;
 
-    @Column(name = "SEQ_ID" , nullable = false)
+    @Column(name = "SEQ_ID", nullable = false)
     private Long seqId;
 
-//    @EmbeddedId
-//    private InvoiceLineEmbeddable invoiceLineEmbeddable;
-            
-    @Column(name = "LINE_NUMBER" , nullable = false)
+    @Column(name = "LINE_NUMBER", nullable = false)
     private Long lineNumber;
 
-    @Column(name= "CUSTOMER_TRX_ID" , nullable = false)
+    @Column(name = "CUSTOMER_TRX_ID", nullable = false)
     private Long customerTrxId;
 
     @Column(name = "QUANTITY_INVOICED")
@@ -39,13 +39,13 @@ public class InvoiceLine {
     @Column(name = "DISCOUNT")
     private BigDecimal discount;
 
-    @Column(name = "IS_DISCOUNT",length = 2)
+    @Column(name = "IS_DISCOUNT", length = 2)
     private String isDiscount;
 
     @Column(name = "TOT_TAX")
     private BigDecimal totTax;
 
-    @Column(name="LINE_AMOUNT")
+    @Column(name = "LINE_AMOUNT")
     private BigDecimal lineAmount;
 
     @Column(name = "PRODUCT_NAME")
@@ -81,8 +81,8 @@ public class InvoiceLine {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InvoiceLine that = (InvoiceLine) o;
-        return this.hashCode()==that.hashCode();
-       }
+        return this.hashCode() == that.hashCode();
+    }
 
     @Override
     public int hashCode() {

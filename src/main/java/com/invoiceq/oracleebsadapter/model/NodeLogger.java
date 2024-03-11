@@ -1,7 +1,6 @@
 package com.invoiceq.oracleebsadapter.model;
 
 import lombok.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -15,8 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 public class NodeLogger {
     @Id
-    @SequenceGenerator(name="node_Seq",sequenceName="node_sequence",allocationSize = 1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="node_Seq")
+    @SequenceGenerator(name = "node_Seq", sequenceName = "node_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "node_Seq")
     @Column
     private Long id;
 

@@ -14,8 +14,8 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 public class ErpInvLobs {
     @Id
-    @SequenceGenerator(name="lobs_seq",sequenceName="lobs_seq",allocationSize = 1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="lobs_seq")
+    @SequenceGenerator(name = "lobs_seq", sequenceName = "lobs_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lobs_seq")
     @Column(name = "EREP_LOB_ID", nullable = false)
     private Long erepLobId;
 
@@ -33,9 +33,9 @@ public class ErpInvLobs {
     private Long createdBy;
 
     @Column(name = "CREATED_ON", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private Timestamp createdOn ;
+    private Timestamp createdOn;
 
     @Column(name = "ERP_FILE_STATUS")
-    private String erpFileStatus ;
+    private String erpFileStatus;
 
 }

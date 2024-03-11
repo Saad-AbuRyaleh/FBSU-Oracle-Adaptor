@@ -1,6 +1,7 @@
 package com.invoiceq.oracleebsadapter.configuration;
 
 import ch.qos.logback.classic.db.names.DBNameResolver;
+
 import static ch.qos.logback.classic.db.names.ColumnName.*;
 
 public class LogBackColumnNameResolver implements DBNameResolver {
