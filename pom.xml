@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.invoiceq</groupId>
-	<artifactId>oracle-ebs-adapter</artifactId>
-	<version>1.4.65</version>
-	<name>oracle-ebs-adapter</name>
-	<description>adapter to integrate with invoiceq API</description>
+	<artifactId>fbsu-oracle-adapter</artifactId>
+	<version>1.0.0</version>
+	<name>fbsu-oracle-adapter</name>
+	<description>Fahad Bin Sultan Univaersity Adpator For Integration With Invoice Q</description>
 	<properties>
 		<java.version>11</java.version>
 	</properties>
@@ -57,7 +57,6 @@
 		<dependency>
 			<groupId>com.invoiceq</groupId>
 			<artifactId>connector</artifactId>
-<!--			<version>2.1.177</version>-->
 			<version>2.1.194</version>
 		</dependency>
 		<dependency>
