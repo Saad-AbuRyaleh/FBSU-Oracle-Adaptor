@@ -24,10 +24,6 @@ public class ZatcaHeaderERP implements Serializable {
     @Column(name = "CUSTOMER_TRX_ID", nullable = false)
     private Long customerTrxId;
 
-//    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
-//    @JoinColumn(name="CUSTOMER_TRX_ID", referencedColumnName="CUSTOMER_TRX_ID")
-//    private List<InvoiceLine> invoiceLines;
-
     @Column(name = "INVOICE_ID", nullable = false)
     private String invoiceId;
 
