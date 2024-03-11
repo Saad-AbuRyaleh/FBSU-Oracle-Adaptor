@@ -1,0 +1,12 @@
+[
+  {
+    "orgKey": "CG583",
+    "channels": [
+      {
+        "invoiceqOrgKey": "CG583",
+        "invoiceqApiKey": "123456789012345678901234567890",
+        "invoiceqChannelId": "00100"
+      }
+    ]
+  }
+]
