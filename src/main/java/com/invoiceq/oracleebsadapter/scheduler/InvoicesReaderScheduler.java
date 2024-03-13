@@ -41,7 +41,7 @@ public class InvoicesReaderScheduler {
             outwardTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned invoices");
                 try {
-                    outwardInvoiceService.proceedInvoices();
+                    outwardInvoiceService.handlePendingInvoices();
                 } catch (Exception e) {
                     LOGGER.error("error happened", e);
                 }
@@ -58,7 +58,7 @@ public class InvoicesReaderScheduler {
             creditTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned credit notes");
                 try {
-                    creditNoteService.proceedInvoices();
+                    creditNoteService.handlePendingCredits();
                 } catch (Exception e) {
                     LOGGER.error("error happened", e);
                 }
@@ -66,6 +66,4 @@ public class InvoicesReaderScheduler {
             });
         }
     }
-
-
 }

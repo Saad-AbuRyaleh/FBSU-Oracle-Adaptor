@@ -9,38 +9,25 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 @Entity
-@Table(name = "XXSAPTCO_ZATCA_LINE_ERP")
+@Table(name = "T_INVOICE_LINES")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class InvoiceLine {
     @Id
-    @Column(name = "ID", nullable = false)
-    private Long id;
-
-    @Column(name = "SEQ_ID", nullable = false)
-    private Long seqId;
+    @Column(name = "INVOICE_SEQ", nullable = false)
+    private Long invoiceSequence;
 
     @Column(name = "LINE_NUMBER", nullable = false)
     private Long lineNumber;
 
-    @Column(name = "CUSTOMER_TRX_ID", nullable = false)
-    private Long customerTrxId;
-
     @Column(name = "QUANTITY_INVOICED")
     private BigDecimal quantityInvoiced;
 
-    @Column(name = "EXTENDED_AMOUNT")
-    private BigDecimal extendedAmount;
-
     @Column(name = "DISCOUNT")
     private BigDecimal discount;
-
-    @Column(name = "IS_DISCOUNT", length = 2)
-    private String isDiscount;
 
     @Column(name = "TOT_TAX")
     private BigDecimal totTax;
@@ -54,7 +41,7 @@ public class InvoiceLine {
     @Column(name = "PRODUCT_CODE")
     private String productCode;
 
-    @Column(name = "PRODUCT_DESC")
+    @Column(name = "DESCRIPTION")
     private String description;
 
     @Column(name = "TAX_RATE")
@@ -67,25 +54,27 @@ public class InvoiceLine {
     private String invoiceCat;
 
     @Column(name = "EXEMPTION_PERCENTAGE")
-    private BigDecimal exemptionPercentage;
+    private Short exemptionPercentage;
 
     @Column(name = "EXEMPTION_CODE")
     private String exemptionCode;
 
-    @Column(name = "EXEMPTION_REASON")
+    @Column(name = "EXEMPTION_OTHER_TYPE_DESC")
     private String exemptionOtherTypeDesc;
 
+    @Column(name = "PREPAYMENT_INVOICE_DATE")
+    private String prepaymentInvoiceDate;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        InvoiceLine that = (InvoiceLine) o;
-        return this.hashCode() == that.hashCode();
-    }
+    @Column(name = "IS_HISTORICAL")
+    private boolean isHistorical;
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(description, unitSellingPrice);
-    }
+    @Column(name = "PREPAYMENT_TAX_AMOUNT")
+    private BigDecimal prepaymentTaxAmount;
+
+    @Column(name = "PREPAYMENT_TAXABLE_AMOUNT")
+    private BigDecimal prepaymentTaxableAmount;
+
+    @Column(name = "PREPAYMENT_INVOICE_REF")
+    private String prepaymentInvoiceRef;
+
 }

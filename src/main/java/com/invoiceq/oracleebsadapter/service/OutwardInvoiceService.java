@@ -1,122 +1,81 @@
 package com.invoiceq.oracleebsadapter.service;
 
 import com.Invoiceq.connector.connector.InvoiceqConnector;
-import com.Invoiceq.connector.exception.InvoiceqException;
-import com.Invoiceq.connector.model.ResponseTemplate;
 import com.Invoiceq.connector.model.outward.OutwardInvoiceOperationResponse;
 import com.Invoiceq.connector.model.outward.UploadOutwardInvoiceRequest;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.invoiceq.oracleebsadapter.model.ErpInvLobs;
-import com.invoiceq.oracleebsadapter.model.ZatcaHeaderERP;
+import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
 import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
-import com.invoiceq.oracleebsadapter.repository.ErpInvLobsRepository;
-import com.invoiceq.oracleebsadapter.repository.ZatcaHeaderErpRepository;
-import com.invoiceq.oracleebsadapter.service.impl.OutwardInvoiceTransformer;
+import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
+import com.invoiceq.oracleebsadapter.transformer.OutwardInvoiceTransformer;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.sql.Timestamp;
-import java.util.*;
-
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class OutwardInvoiceService {
-    @Autowired
-    private InvoiceqConnector invoiceqConnector;
-    @Autowired
-    private OutwardInvoiceTransformer invoiceTransformer;
-    @Autowired
-    private ZatcaHeaderErpRepository zatcaHeaderErpRepository;
-
-    @Autowired
-    private ErpInvLobsRepository erpLobsRepository;
-
     @Value("${invoiceq.connector.orgkey}")
     private String orgKey;
 
     @Value("${invoiceq.connector.channelId}")
     private String channelId;
 
-
-    private final ObjectMapper mapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final InvoiceHeadersRepository invoiceHeadersRepository;
+    private final OutwardInvoiceTransformer transformer;
+    private final InvoiceqConnector invoiceqConnector;
+    private static final String INVOICE_TYPE_CODE = "388";
     private static final Logger LOGGER = LoggerFactory.getLogger(OutwardInvoiceService.class);
+    private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    public void proceedInvoices() {
-        zatcaHeaderErpRepository.fetchInvoiceProcedure();
-        Optional<List<ZatcaHeaderERP>> invoicesOptional = zatcaHeaderErpRepository.findAllByStatusAndInvoiceType(ZatcaStatus.HOST_READY, "388");
-        if (invoicesOptional.isPresent() && !CollectionUtils.isEmpty(invoicesOptional.get())) {
-            List<UploadOutwardInvoiceRequest> outwardInvoiceRequests = invoiceTransformer.transform(invoicesOptional.get());
+    public void handlePendingInvoices() {
+        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, INVOICE_TYPE_CODE);
+        if (invoiceHeaderList.isPresent() && !CollectionUtils.isEmpty(invoiceHeaderList.get())) {
+            List<UploadOutwardInvoiceRequest> outwardInvoiceRequests = transformer.transform(invoiceHeaderList.get());
             for (int i = 0; i < outwardInvoiceRequests.size(); i++) {
-                sendAndHandle(outwardInvoiceRequests.get(i), invoicesOptional.get().get(i).getInvoiceId(), invoicesOptional.get().get(i).getCustomerTrxId(), invoicesOptional.get().get(i).getSeqId());
+                doIQIntegration(outwardInvoiceRequests.get(i));
             }
         }
-
     }
 
-    public void sendAndHandle(UploadOutwardInvoiceRequest request, String originalInvoiceId, Long customerTrxId, Long seqId) {
-        LOGGER.info("Send invoice with INVOICE_ID {} to invoiceQ ..", request.getInvoiceNumber());
-        OutwardInvoiceOperationResponse response = null;
+    private void doIQIntegration(UploadOutwardInvoiceRequest uploadOutwardInvoiceRequest) {
         try {
-            LOGGER.info("Request {}", toJson(request));
-            response = invoiceqConnector.createInvoice(request, orgKey, channelId);
-            handleInvoiceStatus(response, originalInvoiceId, customerTrxId, seqId);
-            LOGGER.info("Receive response from invoiceQ .. {}", toJson(response));
-        } catch (InvoiceqException iqEx) {
-            LOGGER.error("InvoiceQ error happened", iqEx);
-            zatcaHeaderErpRepository.updateZatcaStatus(seqId, originalInvoiceId, ZatcaStatus.TECHNICAL_FAILED, toJson(iqEx.getResponseEntity()), null, null);
-            zatcaHeaderErpRepository.updateInvoiceStatusProcedure(customerTrxId, ZatcaStatus.TECHNICAL_FAILED.name(), toJson(iqEx.getResponseEntity()));
-        }
-    }
-
-    private void handleInvoiceStatus(OutwardInvoiceOperationResponse response, String invoiceId, Long customerTrxId, Long seqId) {
-        try {
-            if (response.getValid() && Objects.nonNull(response.getBody())) {
-                zatcaHeaderErpRepository.updateZatcaStatus(seqId, invoiceId, ZatcaStatus.SUCCESS, toJson(response.getErrors()), response.getBody().getInvoiceqReference(), response.getBody().getSubmittedPayableRoundingAmount());
-                getAndWriteInvoicePdf(response.getBody().getInvoiceqReference(), customerTrxId, "PENDING");
-                zatcaHeaderErpRepository.updateInvoiceStatusProcedure(customerTrxId, ZatcaStatus.SUCCESS.name(), toJson(response));
+            LOGGER.info("Start InvoiceQ Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
+            OutwardInvoiceOperationResponse response = invoiceqConnector.createInvoice(uploadOutwardInvoiceRequest, orgKey, channelId);
+            if (isValid(uploadOutwardInvoiceRequest.getInvoiceNumber(), response)) {
+                LOGGER.info("Success Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
+                invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, uploadOutwardInvoiceRequest.getInvoiceNumber());
+                //TODO HANDLE THE INSERTION INTO ATTACHMENTS
+                //TODO HANDLE OTHER RESPONSES , LIKE IQ REF ...ETC
             } else {
-                zatcaHeaderErpRepository.updateZatcaStatus(seqId, invoiceId, ZatcaStatus.BUSINESS_FAILED, toJson(response.getErrors()), null, null);
-                zatcaHeaderErpRepository.updateInvoiceStatusProcedure(customerTrxId, ZatcaStatus.BUSINESS_FAILED.name(), toJson(response.getErrors()));
+                LOGGER.info("Failed Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
+                invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, uploadOutwardInvoiceRequest.getInvoiceNumber());
+                //TODO HANDLE OTHER RESPONSES , LIKE ERROR DETAILS ...ETC
+
             }
         } catch (Exception e) {
-            LOGGER.error("error happened ", e);
+            LOGGER.error("Something went wrong with Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber(), e);
+            invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.TECHNICAL_FAILED, uploadOutwardInvoiceRequest.getInvoiceNumber());
+            //TODO HANDLE OTHER RESPONSES , LIKE ERROR DETAILS ...ETC
         }
 
     }
 
-
-    private void getAndWriteInvoicePdf(String invoiceqReference, Long customerTrxId, String fileStatus) throws InterruptedException {
-        Thread.sleep(5000);
-        OutwardInvoiceOperationResponse response = getInvoicePdf(invoiceqReference);
-        if (BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
-            ErpInvLobs erpInvLobs = new ErpInvLobs();
-            erpInvLobs.setCustomerTrxId(customerTrxId);
-            erpInvLobs.setBlobFileName(response.getBody().getPdfFileName());
-            erpInvLobs.setErpFileStatus(fileStatus);
-            erpInvLobs.setCreatedOn(new Timestamp(new Date().getTime()));
-            erpInvLobs.setBlobFileContent(Base64.getDecoder().decode(response.getBody().getBase64PDF()));
-            erpLobsRepository.save(erpInvLobs);
+    private boolean isValid(String invoiceNumber, OutwardInvoiceOperationResponse response) {
+        if (BooleanUtils.isNotTrue(response.getValid()) && !CollectionUtils.isEmpty(response.getErrors())) {
+            LOGGER.error("InvoiceQ Validation Errors For Invoice Number [{}] is [{}]", invoiceNumber, toJson(response));
+            return false;
         }
+        return true;
     }
-
-
-    private OutwardInvoiceOperationResponse getInvoicePdf(String invoiceqReference) {
-        OutwardInvoiceOperationResponse outwardInvoiceOperationResponse = null;
-        try {
-            outwardInvoiceOperationResponse = invoiceqConnector.getInvoicePdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3, orgKey, channelId);
-        } catch (Exception e) {
-            LOGGER.error("error in get invoice pdf", e);
-        }
-        return outwardInvoiceOperationResponse;
-    }
-
 
     private String toJson(Object object) {
         try {
@@ -126,6 +85,5 @@ public class OutwardInvoiceService {
             return "";
         }
     }
-
 
 }

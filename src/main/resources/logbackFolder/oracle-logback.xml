@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <timestamp key="byDay" datePattern="yyyyMMdd'T'HHmmss"/>
-    <appender name="DB" class="com.invoiceq.oracleebsadapter.configuration.appender.ConnectorDBAppender">
+    <appender name="DB" class="com.invoiceq.oracleebsadapter.configuration.ConnectorDBAppender">
         <connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">
             <driverClass>oracle.jdbc.OracleDriver</driverClass>
             <url>jdbc:oracle:thin:@//10.10.207.215:1527/TESTERP</url>

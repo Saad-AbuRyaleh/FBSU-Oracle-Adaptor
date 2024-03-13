@@ -8,21 +8,18 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 
 @Entity
-@Table(name = "XXSAPTCO_ZATCA_HEADER_ERP")
+@Table(name = "T_INVOICE_HEADER")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ZatcaHeaderERP implements Serializable {
+public class InvoiceHeader implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "SEQ_ID", nullable = false)
-    private Long seqId;
-
-    @Column(name = "CUSTOMER_TRX_ID", nullable = false)
-    private Long customerTrxId;
+    @Column(name = "INVOICE_SEQ ", nullable = false)
+    private Long invoiceSequence;
 
     @Column(name = "INVOICE_ID", nullable = false)
     private String invoiceId;
@@ -33,23 +30,32 @@ public class ZatcaHeaderERP implements Serializable {
     @Column(name = "ISSUE_TIME")
     private String issueTime;
 
-    @Column(name = "SUPPLY_FROM_DATE")
+    @Column(name = "DUE_DATE")
+    private String dueDate;
+
+    @Column(name = "SUPPLY_DATE")
     private String supplyFromDate;
 
     @Column(name = "SUPPLY_END_DATE")
     private String supplyEndDate;
 
     @Column(name = "ORGANIZATION_UNIT")
-    private Short organizationUnit;
+    private Long organizationUnit;
+
+    @Column(name = "PO_REFERENCE_NO")
+    private Long poReferenceNumber;
+
+    @Column(name = "NOTES")
+    private String notes;
+
+    @Column(name = "CUST_NUMBER")
+    private String customerNumber;
 
     @Column(name = "CUST_NAME")
-    private String custName;
+    private String customerName;
 
     @Column(name = "CUST_NAME_AR")
     private String custNameAr;
-
-    @Column(name = "CUST_NUMBER")
-    private String custNumber;
 
     @Column(name = "CUST_VAT")
     private String custVat;
@@ -69,6 +75,9 @@ public class ZatcaHeaderERP implements Serializable {
     @Column(name = "POSTAL_CODE")
     private String postalCode;
 
+    @Column(name = "BLDG_NO")
+    private String buildingNo;
+
     @Column(name = "DISTRICT")
     private String district;
 
@@ -78,14 +87,17 @@ public class ZatcaHeaderERP implements Serializable {
     @Column(name = "ADDRESS_STREET")
     private String addressStreet;
 
-    @Column(name = "BUILDING_NO")
-    private String buildingNo;
-
     @Column(name = "INVOICE_TYPE")
     private String invoiceType;
 
     @Column(name = "TOTAL_TAX")
     private BigDecimal totalTax;
+
+    @Column(name = "RETEN_AMOUNT")
+    private BigDecimal retentionAmount;
+
+    @Column(name = "ADMIN_CHARGES_AMOUNT ")
+    private BigDecimal adminChargesAmount;
 
     @Column(name = "TOTAL_AMOUNT")
     private BigDecimal totalAmount;
@@ -99,40 +111,57 @@ public class ZatcaHeaderERP implements Serializable {
     @Column(name = "TOTAL_ADVANCED_AMOUNT")
     private BigDecimal totalAdvancedAmount;
 
-    @Column(name = "CREDIT_MEMO_COMMENT")
-    private String creditMemoComment;
+    @Column(name = "MEMO_COMMENT")
+    private String memoComment;
 
-    @Column(name = "CREDIT_MEMO_NO")
-    private String creditMemoNo;
+    @Column(name = "MEMO_ORG_NO")
+    private String memoNo;
 
-    @Column(name = "READ_FROM_ERP")
-    private Short readFromErp;
+    @Column(name = "MEMO_ORG_TAX_NUMBER")
+    private String memoInvoiceQReference;
+
+    @Column(name = "IS_HISTORICAL")
+    private boolean isHistorical;
+
+    @Column(name = "INVOICE_BUSS_TYPE")
+    private String invoiceBussType;
+
+    @Column(name = "BANK_ACCOUNT_NUMBER")
+    private String bankAccountNumber;
+
+    @Column(name = "BANK_NAME")
+    private String bankName;
+
+    @Column(name = "BANK_SWIFT")
+    private String bankSwift;
+
+    @Column(name = "BANK_IBAN")
+    private String bankIban;
+
+    @Column(name = "CURRENCY")
+    private String currencyIsoCode;
+
+    @Column(name = "TAX_AMOUNT_IN_BASE_CURRENCY")
+    private BigDecimal totalTaxInBaseCurrency;
+
+    @Column(name = "CREATED_ON", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Timestamp createdOn;
 
     @Column(name = "STATUS")
     @Enumerated(EnumType.STRING)
     private ZatcaStatus status;
 
+    @Column(name = "ERROR_DETAILS")
+    private String errorDetails;
+
     @Column(name = "REFERENCE")
     private String reference;
-
-    @Column(name = "UUID")
-    private String uuid;
-
-    @Column(name = "SIGNATURE")
-    private String signature;
-
-    @Column(name = "INVOICE_BUSS_TYPE")
-    private String invoiceBussType;
-
-    @Column(name = "ERROR_DETAILS")
-    @Lob
-    private String errorDetails;
 
     @Column(name = "PAYABLE_ROUNDING_AMOUNT")
     private BigDecimal payableRoundingAmount;
 
-    @Transient
-    private InvoiceType invType;
+    @Column(name = "QR_CODE")
+    private String stringQrCode;
 
     @Transient
     private String invoiceQIssueDate;
@@ -144,8 +173,6 @@ public class ZatcaHeaderERP implements Serializable {
     private String supplyEndZonedDate;
 
     @Transient
-    private String originalInvoiceqReference;
+    private InvoiceType invType;
 
-    @Transient
-    private Boolean isHistorical;
 }
