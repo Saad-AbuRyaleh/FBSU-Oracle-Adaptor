@@ -1,11 +1,11 @@
 [
   {
-    "orgKey": "CG583",
+    "orgKey": "CG4",
     "channels": [
       {
-        "invoiceqOrgKey": "CG583",
+        "invoiceqOrgKey": "CG4",
         "invoiceqApiKey": "123456789012345678901234567890",
-        "invoiceqChannelId": "00100"
+        "invoiceqChannelId": "TE"
       }
     ]
   }

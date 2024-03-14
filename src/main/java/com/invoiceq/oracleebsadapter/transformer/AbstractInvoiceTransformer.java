@@ -1,5 +1,6 @@
 package com.invoiceq.oracleebsadapter.transformer;
 
+import com.Invoiceq.connector.model.EntitySchemeId;
 import com.Invoiceq.connector.model.InvoiceType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +57,7 @@ public abstract class AbstractInvoiceTransformer<T> {
         configuration.setLocale(Locale.US);
         Template template = null;
         try {
-            FileTemplateLoader templateLoader = new FileTemplateLoader(new File("invoiceTemplate"));
+            FileTemplateLoader templateLoader = new FileTemplateLoader(new File("invoiceTemplates"));
             configuration.setTemplateLoader(templateLoader);
             configuration.setFallbackOnNullLoopVariable(false);
             template = configuration.getTemplate(templateName);
@@ -81,6 +83,25 @@ public abstract class AbstractInvoiceTransformer<T> {
         } catch (Exception e) {
             LOGGER.error("error happened", e);
         }
+    }
+    public static String convertIso2CodeToIso3Code(String is2Code){
+        try {
+            Locale locale = new Locale("",is2Code.trim());
+            return locale.getISO3Country();
+        }catch (Exception e){
+            LOGGER.error("error happened", e);
+        }
+        return "";
+    }
+    public static String convertToValidSchemeId(String schemeId){
+        String result  = "";
+        try {
+            result = (StringUtils.equalsIgnoreCase("700",schemeId)) ? EntitySchemeId.NUMBER_700.name() : schemeId ;
+            return EnumUtils.isValidEnumIgnoreCase(EntitySchemeId.class, result) ?  EnumUtils.getEnumIgnoreCase(EntitySchemeId.class,result).name() : null;
+        }catch (Exception e){
+            LOGGER.error("error happened when map to entitySchemeId {}", schemeId, e);
+        }
+        return "";
     }
 
 }

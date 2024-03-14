@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table
+@Table(name = "node_logger")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

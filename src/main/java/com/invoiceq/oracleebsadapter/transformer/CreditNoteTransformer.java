@@ -59,7 +59,7 @@ public class CreditNoteTransformer extends AbstractInvoiceTransformer<CreditNote
 
     private InvoiceHeader processAndGetOriginalInvoiceInfo(InvoiceHeader credit) {
         if (Objects.nonNull(credit.getMemoNo())) {
-            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findFirstByInvoiceIdOrderBySeqIdDesc(credit.getMemoNo());
+            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(credit.getMemoNo());
             return originalInvoice.orElse(null);
         }
         return credit;

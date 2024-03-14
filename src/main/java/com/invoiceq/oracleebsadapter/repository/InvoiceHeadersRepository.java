@@ -16,16 +16,16 @@ public interface InvoiceHeadersRepository extends JpaRepository<InvoiceHeader, L
 
     Optional<List<InvoiceHeader>> findByStatusAndInvoiceType(ZatcaStatus status, String invoiceType);
 
-    Optional<InvoiceHeader> findFirstByInvoiceIdOrderBySeqIdDesc(String invoiceId);
+    Optional<InvoiceHeader> findFirstByInvoiceIdOrderByInvoiceSequenceDesc(String invoiceId);
 
     @Modifying
     @Transactional
-    @Query("update InvoiceHeader set InvoiceHeader.status=:status where InvoiceHeader.invoiceId=:invoiceId")
+    @Query("update InvoiceHeader ih set ih.status=:status where ih.invoiceId=:invoiceId")
     void updateZatcaStatus(@Param("status") ZatcaStatus zatcaStatus, @Param("invoiceId") String invoiceId);
 
     @Modifying
     @Transactional
-    @Query("update InvoiceHeader set InvoiceHeader.status=:status where InvoiceHeader.invoiceId=:invoiceId")
+    @Query("update InvoiceHeader ih set ih.status=:status where ih.invoiceId=:invoiceId")
     void updateReadStatus(@Param("status") ZatcaStatus zatcaStatus, @Param("invoiceId") String invoiceId);
 
 
