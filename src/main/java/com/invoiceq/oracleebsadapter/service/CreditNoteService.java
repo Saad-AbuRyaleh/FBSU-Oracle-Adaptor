@@ -1,12 +1,15 @@
 package com.invoiceq.oracleebsadapter.service;
 
 import com.Invoiceq.connector.connector.InvoiceqConnector;
+import com.Invoiceq.connector.model.ResponseTemplate;
 import com.Invoiceq.connector.model.creditNote.CreditNoteOperationResponse;
 import com.Invoiceq.connector.model.creditNote.CreditNoteRequest;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.invoiceq.oracleebsadapter.model.InvoiceAttachment;
 import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
 import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
+import com.invoiceq.oracleebsadapter.repository.InvoiceAttachmentRepository;
 import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
 import com.invoiceq.oracleebsadapter.transformer.CreditNoteTransformer;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.List;
-import java.util.Optional;
+import java.sql.Timestamp;
+import java.util.*;
 
 
 @Service
@@ -38,6 +41,7 @@ public class CreditNoteService {
     private final InvoiceHeadersRepository invoiceHeadersRepository;
     private final CreditNoteTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
+    private final InvoiceAttachmentRepository invoiceAttachmentRepository;
     private final static String CREDIT_TYPE_CODE = "381";
 
     public void handlePendingCredits() {
@@ -57,19 +61,44 @@ public class CreditNoteService {
             if (isValid(creditNoteRequest.getCreditNoteNumber(), response)) {
                 LOGGER.info("Success Integration for Invoice [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, creditNoteRequest.getCreditNoteNumber());
-                //TODO HANDLE THE INSERTION INTO ATTACHMENTS
-                //TODO HANDLE OTHER RESPONSES , LIKE IQ REF ...ETC
+                invoiceHeadersRepository.updateSuccessfullResponse(creditNoteRequest.getCreditNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
+                writePdfData(response.getBody().getInvoiceqReference());
             } else {
                 LOGGER.info("Failed Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, creditNoteRequest.getCreditNoteNumber());
-                //TODO HANDLE OTHER RESPONSES , LIKE ERROR DETAILS ...ETC
+                invoiceHeadersRepository.updateFailedStatus(creditNoteRequest.getCreditNoteNumber(),response.getErrors().toString());
 
             }
         } catch (Exception e) {
             LOGGER.error("Something went wrong with Credit [{}]", creditNoteRequest.getCreditNoteNumber(), e);
             invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.TECHNICAL_FAILED, creditNoteRequest.getCreditNoteNumber());
-            //TODO HANDLE OTHER RESPONSES , LIKE ERROR DETAILS ...ETC
+            invoiceHeadersRepository.updateFailedStatus(creditNoteRequest.getCreditNoteNumber(),e.getMessage());
         }
+    }
+
+    private void writePdfData(String invoiceqReference) throws InterruptedException {
+        Thread.sleep(5000);
+        CreditNoteOperationResponse response = getInvoicePdf(invoiceqReference);
+        if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
+            InvoiceAttachment invoiceAttachment = new InvoiceAttachment();
+            invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
+            invoiceAttachment.setStatus("WRITTEN");
+            invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
+            invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            invoiceAttachmentRepository.save(invoiceAttachment);
+        }
+    }
+
+    private CreditNoteOperationResponse getInvoicePdf(String invoiceqReference) {
+        CreditNoteOperationResponse creditNoteOperationResponse = null;
+        try{
+            creditNoteOperationResponse= invoiceqConnector.getCreditPdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3,orgKey,channelId);
+        }
+        catch (Exception e){
+            LOGGER.error("error in get invoice pdf",e);
+        }
+        return creditNoteOperationResponse;
+
     }
 
     private boolean isValid(String creditNoteNumber, CreditNoteOperationResponse response) {
