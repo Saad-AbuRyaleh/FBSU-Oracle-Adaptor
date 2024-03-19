@@ -54,6 +54,6 @@
 <#if product_has_next>,</#if>
 </#list>],
 "duplicateMode": "RETRIEVE_DUPLICATE_DETAILS",
-"creditReason": <#if inv.creditMemoComment??>"${inv.creditMemoComment?json_string!}"<#else>null</#if>,
-"narration": <#if inv.creditMemoComment??>"${inv.creditMemoComment?json_string!}"<#else>null</#if>
+"creditReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
+"narration": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>
 }

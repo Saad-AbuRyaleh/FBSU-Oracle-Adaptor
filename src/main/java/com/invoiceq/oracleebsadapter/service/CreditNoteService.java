@@ -30,7 +30,7 @@ public class CreditNoteService {
 
     private final ObjectMapper mapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    private static final Logger LOGGER = LoggerFactory.getLogger(OutwardInvoiceService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreditNoteService.class);
 
     @Value("${invoiceq.connector.orgkey}")
     private String orgKey;
@@ -59,7 +59,7 @@ public class CreditNoteService {
             LOGGER.info("Start InvoiceQ Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
             CreditNoteOperationResponse response = invoiceqConnector.createCreditNote(creditNoteRequest, orgKey, channelId);
             if (isValid(creditNoteRequest.getCreditNoteNumber(), response)) {
-                LOGGER.info("Success Integration for Invoice [{}]", creditNoteRequest.getCreditNoteNumber());
+                LOGGER.info("Success Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(creditNoteRequest.getCreditNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
                 writePdfData(response.getBody().getInvoiceqReference());

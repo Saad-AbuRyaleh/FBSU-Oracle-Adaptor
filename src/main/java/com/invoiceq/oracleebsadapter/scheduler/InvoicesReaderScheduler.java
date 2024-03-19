@@ -1,6 +1,7 @@
 package com.invoiceq.oracleebsadapter.scheduler;
 
 import com.invoiceq.oracleebsadapter.service.CreditNoteService;
+import com.invoiceq.oracleebsadapter.service.DebitNoteService;
 import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,9 @@ public class InvoicesReaderScheduler {
     private CreditNoteService creditNoteService;
 
     @Autowired
+    private DebitNoteService debitNoteService;
+
+    @Autowired
     private NodeLoggerService nodeLoggerService;
 
     @Value("${instance.node-code}")
@@ -34,6 +38,10 @@ public class InvoicesReaderScheduler {
     @Qualifier("readCreditExecutor")
     @Autowired
     private ThreadPoolTaskExecutor creditTaskExecutor;
+
+    @Qualifier("readDebitExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor debiTaskExecutor;
 
     @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
     public void invoiceReader() {
@@ -63,6 +71,20 @@ public class InvoicesReaderScheduler {
                     LOGGER.error("error happened", e);
                 }
                 LOGGER.info("Finish checking for unsigned credit notes");
+            });
+        }
+    }
+    @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
+    public void debitReader() {
+        if (debiTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
+            debiTaskExecutor.execute(() -> {
+                LOGGER.info("Start check for unsigned debit notes");
+                try {
+                    debitNoteService.handlePendingDebits();
+                } catch (Exception e) {
+                    LOGGER.error("error happened", e);
+                }
+                LOGGER.info("Finish checking for unsigned debit notes");
             });
         }
     }

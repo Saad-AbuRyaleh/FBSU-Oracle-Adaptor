@@ -27,4 +27,9 @@ public class OracleEbsAdapterApplication {
         return new ThreadPoolTaskExecutor();
     }
 
+    @Bean(name = "readDebitExecutor")
+    public ThreadPoolTaskExecutor threadPoolReadDebitExecutor() {
+        return new ThreadPoolTaskExecutor();
+    }
+
 }
