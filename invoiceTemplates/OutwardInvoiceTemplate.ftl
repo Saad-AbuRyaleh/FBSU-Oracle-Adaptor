@@ -52,16 +52,5 @@
 "supplyDate": "${inv.supplyFromZonedDate!}",
 "supplyEndDate": "${inv.supplyEndZonedDate!}",
 "totalTaxAmount":<#if inv.totalTax??>"${inv.totalTax?string("0.00")!0.00}"<#else>null</#if>,
-"totalInvoiceAmount": "${inv.totalDueAmount?string("0.00")!}",
-"duplicateMode": "RETRIEVE_DUPLICATE_DETAILS",
-"invoiceLevelAllowances": [
-<#list invoiceLevelAllowances as discount>
-    {
-    "allowanceCode":"95",
-    "amount": <#if discount.amount??>${discount.amount?string("0.0000")!0.00}<#else>null</#if>,
-    "taxRate":<#if discount.taxRate??>${discount.taxRate?string("0.00")!0.00}<#else>null</#if>,
-    "exemptionCode":<#if discount.exemptionCode??>"${discount.exemptionCode!}"<#else>null</#if>,
-    "exemptionOtherTypeDesc":<#if discount.exemptionOtherTypeDesc??>"${discount.exemptionOtherTypeDesc!}"<#else>null</#if>
-    }<#if discount_has_next>,</#if>
-</#list>]
+"totalInvoiceAmount": "${inv.totalDueAmount?string("0.00")!}"
 }

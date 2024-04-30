@@ -32,7 +32,6 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
                 Map<String, Object> data = new HashMap<>();
                 reformatObjectData(invoiceHeader);
                 data.put("inv", invoiceHeader);
-                data.put("invoiceLevelAllowances", extractInvoiceLevelDiscount(invoiceLines));
                 data.put("invoiceLines", invoiceLines);
                 data.put("transformer", this);
                 LOGGER.info("Data is {}", data);
@@ -47,21 +46,6 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
             }
         });
         return transformedInvoices;
-    }
-
-    private List<InvoiceLevelAllowance> extractInvoiceLevelDiscount(List<InvoiceLine> invoiceLines) {
-        List<InvoiceLevelAllowance> invoiceLevelDiscounts = new ArrayList<>();
-        LOGGER.info("current invoice lines [{}]", invoiceLines);
-        Iterator<InvoiceLine> iterator = invoiceLines.iterator();
-        while (iterator.hasNext()) {
-            InvoiceLine invoiceLine = iterator.next();
-            if (ObjectUtils.isNotEmpty(invoiceLine.getDiscount())) {
-                invoiceLevelDiscounts.add(InvoiceLevelAllowance.builder().amount(invoiceLine.getLineAmount().abs()).allowanceCode("95").exemptionCode(invoiceLine.getExemptionCode()).exemptionOtherTypeDesc(invoiceLine.getExemptionOtherTypeDesc()).taxRate(invoiceLine.getTaxRate()).build());
-                iterator.remove();
-            }
-        }
-        LOGGER.info("current invoice lines without discount [{}]", invoiceLines);
-        return invoiceLevelDiscounts;
     }
 
 

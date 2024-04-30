@@ -61,7 +61,7 @@ public class DebitNoteService {
                 LOGGER.info("Success Integration for Debit [{}]", debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(debitNoteRequest.getDebitNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference());
+                writePdfData(response.getBody().getInvoiceqReference(),debitNoteRequest.getDebitNoteNumber());
             } else {
                 LOGGER.info("Failed Integration for Debit [{}]", debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, debitNoteRequest.getDebitNoteNumber());
@@ -75,15 +75,17 @@ public class DebitNoteService {
         }
     }
 
-    private void writePdfData(String invoiceqReference) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String debitNoteNumber) throws InterruptedException {
         Thread.sleep(5000);
         DebitNoteOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
             InvoiceAttachment invoiceAttachment = new InvoiceAttachment();
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
-            invoiceAttachment.setStatus("WRITTEN");
+            invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
             invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(debitNoteNumber);
+            invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
         }
     }

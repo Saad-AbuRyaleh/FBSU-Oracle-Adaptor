@@ -60,7 +60,6 @@
 }
 <#if product_has_next>,</#if>
 </#list>],
-"duplicateMode": "RETRIEVE_DUPLICATE_DETAILS",
 "debitReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
 "narration": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>
 }

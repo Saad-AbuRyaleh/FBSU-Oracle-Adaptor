@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
@@ -17,7 +14,8 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 public class InvoiceAttachment {
     @Id
-    @Column(name = "ID", nullable = false)
+    @SequenceGenerator(name = "attachment_Seq", sequenceName = "attachment_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "attachment_Seq")
     private Long id;
 
     @Column(name = "PDF_FILE_PATH ")

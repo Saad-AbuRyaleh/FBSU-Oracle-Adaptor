@@ -2,10 +2,8 @@ package com.invoiceq.oracleebsadapter.service;
 
 import com.Invoiceq.connector.connector.InvoiceqConnector;
 import com.Invoiceq.connector.model.ResponseTemplate;
-import com.Invoiceq.connector.model.creditNote.CreditNoteOperationResponse;
 import com.Invoiceq.connector.model.outward.OutwardInvoiceOperationResponse;
 import com.Invoiceq.connector.model.outward.UploadOutwardInvoiceRequest;
-import com.Invoiceq.connector.model.outward.UploadOutwardInvoiceResponse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.invoiceq.oracleebsadapter.model.InvoiceAttachment;
@@ -63,7 +61,7 @@ public class OutwardInvoiceService {
                 LOGGER.info("Success Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(uploadOutwardInvoiceRequest.getInvoiceNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference());
+                writePdfData(response.getBody().getInvoiceqReference(),uploadOutwardInvoiceRequest.getInvoiceNumber());
             } else {
                 LOGGER.info("Failed Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, uploadOutwardInvoiceRequest.getInvoiceNumber());
@@ -77,15 +75,17 @@ public class OutwardInvoiceService {
 
     }
 
-    private void writePdfData(String invoiceqReference) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String invoiceNumber) throws InterruptedException {
         Thread.sleep(5000);
         OutwardInvoiceOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
             InvoiceAttachment invoiceAttachment = new InvoiceAttachment();
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
-            invoiceAttachment.setStatus("WRITTEN");
+            invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
             invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(invoiceNumber);
+            invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
         }
     }

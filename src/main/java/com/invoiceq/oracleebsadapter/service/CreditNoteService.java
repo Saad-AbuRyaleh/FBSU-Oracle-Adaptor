@@ -62,7 +62,7 @@ public class CreditNoteService {
                 LOGGER.info("Success Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(creditNoteRequest.getCreditNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference());
+                writePdfData(response.getBody().getInvoiceqReference(),creditNoteRequest.getCreditNoteNumber());
             } else {
                 LOGGER.info("Failed Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, creditNoteRequest.getCreditNoteNumber());
@@ -76,15 +76,17 @@ public class CreditNoteService {
         }
     }
 
-    private void writePdfData(String invoiceqReference) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String creditNoteNumber) throws InterruptedException {
         Thread.sleep(5000);
         CreditNoteOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
             InvoiceAttachment invoiceAttachment = new InvoiceAttachment();
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
-            invoiceAttachment.setStatus("WRITTEN");
+            invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
             invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(creditNoteNumber);
+            invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
         }
     }

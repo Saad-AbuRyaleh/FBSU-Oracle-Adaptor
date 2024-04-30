@@ -20,6 +20,8 @@ public interface InvoiceHeadersRepository extends JpaRepository<InvoiceHeader, L
 
     Optional<InvoiceHeader> findFirstByInvoiceIdOrderByInvoiceSequenceDesc(String invoiceId);
 
+    Optional<InvoiceHeader> findByInvoiceId(String invoiceId);
+
     @Modifying
     @Transactional
     @Query("update InvoiceHeader ih set ih.status=:status where ih.invoiceId=:invoiceId")
