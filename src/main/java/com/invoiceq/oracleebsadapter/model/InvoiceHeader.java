@@ -121,7 +121,7 @@ public class InvoiceHeader implements Serializable {
     private String memoInvoiceQReference;
 
     @Column(name = "IS_HISTORICAL")
-    private boolean isHistorical;
+    private Boolean isHistorical;
 
     @Column(name = "INVOICE_BUSS_TYPE")
     private String invoiceBussType;

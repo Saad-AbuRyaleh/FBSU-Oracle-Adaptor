@@ -10,9 +10,9 @@
 	</parent>
 	<groupId>com.invoiceq</groupId>
 	<artifactId>fbsu-oracle-adapter</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>fbsu-oracle-adapter</name>
-	<description>Fahad Bin Sultan Univaersity Adpator For Integration With Invoice Q</description>
+	<description>Fahad Bin Sultan University Adaptor For Integration With Invoice Q</description>
 	<properties>
 		<java.version>11</java.version>
 	</properties>

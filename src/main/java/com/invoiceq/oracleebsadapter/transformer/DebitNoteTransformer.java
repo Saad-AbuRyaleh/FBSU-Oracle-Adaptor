@@ -27,10 +27,10 @@ public class DebitNoteTransformer extends AbstractInvoiceTransformer<DebitNoteRe
             try {
                 Long begin = System.currentTimeMillis();
                 InvoiceHeader originalInvoice = processAndGetOriginalInvoiceInfo(debit);
-                if (readyToSend(Objects.nonNull(originalInvoice) && Objects.equals(originalInvoice.getStatus(), ZatcaStatus.SUCCESS), debit.isHistorical())) {
+                if (readyToSend(Objects.nonNull(originalInvoice) && Objects.equals(originalInvoice.getStatus(), ZatcaStatus.SUCCESS), debit.getIsHistorical())) {
                     reformatObjectData(debit);
                     List<InvoiceLine> invoiceLines = invoiceLineRepository.findAllByInvoiceSequence(debit.getInvoiceSequence());
-                    List<InvoiceLine> originalInvoiceLines = debit.isHistorical() ? null : invoiceLineRepository.findAllByInvoiceSequence(originalInvoice.getInvoiceSequence());
+                    List<InvoiceLine> originalInvoiceLines = debit.getIsHistorical() ? null : invoiceLineRepository.findAllByInvoiceSequence(originalInvoice.getInvoiceSequence());
                     StringWriter writer = new StringWriter();
                     Map<String, Object> data = new HashMap<>();
                     data.put("inv", debit);
