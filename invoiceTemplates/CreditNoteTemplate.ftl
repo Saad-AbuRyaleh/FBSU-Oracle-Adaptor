@@ -10,11 +10,11 @@
 "historicalCustomerInfo":<#if inv.isHistorical && inv.invType??>{
     "countryIsoCode": "${transformer.convertIso2CodeToIso3Code(inv.country!)}",
     "isTaxableCustomer": "true",
-    "isPerson": <#if inv.invType?? && inv.invType == "SIMPLE"??>true<#else>false</#if>,
+    "isPerson": <#if inv.invType?? && inv.invType?string == "SIMPLE">true<#else>false</#if>,
     "entitySchemeId":<#if inv.customerIdentType??> "${inv.customerIdentType!}"<#else>null</#if>,
     "entityTaxNumber": "${inv.customerVat!}",
     "registrationNumber": "${inv.customerIdentNumber!}",
-    "nationalNumber": "${inv.customerIdentNumber}",
+    "nationalNumber": "${inv.customerIdentNumber!}",
     "customerCode": "${inv.customerNumber!}",
     "mode": "UPDATE_IF_EXISTS",
     "englishName": <#if inv.customerName??>"${inv.customerName?json_string!}"<#else>null</#if>,
