@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
+import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
 import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
 import com.invoiceq.oracleebsadapter.repository.InvoiceLineRepository;
 import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
@@ -103,5 +104,9 @@ public abstract class AbstractInvoiceTransformer<T> {
         }
         return "";
     }
-
+    protected void handleFTLException(String message, String invoiceId) {
+        LOGGER.error("Something went wrong with Transforming Invoice [{}]", invoiceId);
+        invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.TECHNICAL_FAILED, invoiceId);
+        invoiceHeadersRepository.updateFailedStatus(invoiceId,message);
+    }
 }

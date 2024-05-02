@@ -42,7 +42,8 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
                 Long end = System.currentTimeMillis();
                 LOGGER.info("time to execute the transformation {} millisecond", end - begin);
             } catch (TemplateException | IOException e) {
-                LOGGER.error("error happened", e);
+                LOGGER.error("error happened {}", e.getMessage());
+                handleFTLException(e.getMessage(),invoiceHeader.getInvoiceId());
             }
         });
         return transformedInvoices;

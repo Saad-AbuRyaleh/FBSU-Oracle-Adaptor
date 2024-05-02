@@ -49,7 +49,8 @@ public class CreditNoteTransformer extends AbstractInvoiceTransformer<CreditNote
                 }
 
             } catch (TemplateException | IOException e) {
-                LOGGER.error("error happened", e);
+                LOGGER.error("error happened {}", e.getMessage());
+                handleFTLException(e.getMessage(),credit.getInvoiceId());
 
             }
 

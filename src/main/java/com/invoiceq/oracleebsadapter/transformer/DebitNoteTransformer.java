@@ -47,7 +47,8 @@ public class DebitNoteTransformer extends AbstractInvoiceTransformer<DebitNoteRe
                 }
 
             } catch (TemplateException | IOException e) {
-                LOGGER.error("error happened", e);
+                LOGGER.error("error happened {}", e.getMessage());
+                handleFTLException(e.getMessage(),debit.getInvoiceId());
 
             }
 
