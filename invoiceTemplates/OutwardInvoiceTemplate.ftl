@@ -3,17 +3,18 @@
 "totalDiscountAmount":<#if inv.totInvoiceDiscount??>"${inv.totInvoiceDiscount?string("0.00")!0.00}"<#else>"0.00"</#if>,
 "totalAdvancedPaidAmount": <#if inv.totalAdvancedAmount??>"${inv.totalAdvancedAmount?string("0.00")!0.00}"<#else>"0.00"</#if>,
 "dueDate": "${inv.invoiceQIssueDate!}",
-"customerInfo":<#if inv.invType == "SIMPLE">null<#else>{
+"customerInfo":{
 "countryIsoCode": "${transformer.convertIso2CodeToIso3Code(inv.country)}",
 "isTaxableCustomer": "true",
-"isPerson": "false",
-"entitySchemeId": <#if inv.custIdentType??>"${transformer.convertToValidSchemeId(inv.custIdentType!)}"<#else>null</#if>,
-"entityTaxNumber": "${inv.custVat!}",
-"registrationNumber": "${inv.custIdentNumber!}",
-"customerCode": "${inv.custNumber!}",
+"isPerson": <#if inv.invType?? && inv.invType == "SIMPLE"??>true<#else>false</#if>,
+"entitySchemeId": <#if inv.customerIdentType??>"${transformer.convertToValidSchemeId(inv.customerIdentType!)}"<#else>null</#if>,
+"entityTaxNumber": "${inv.customerVat!}",
+"registrationNumber": "${inv.customerIdentNumber!}",
+"nationalNumber": "${inv.customerIdentNumber}",
+"customerCode": "${inv.customerNumber!}",
 "mode": "UPDATE_IF_EXISTS",
-"englishName": <#if inv.custName??>"${inv.custName?json_string!}"<#else>null</#if>,
-"arabicName": <#if inv.custNameAr??>"${inv.custNameAr?json_string!}"<#elseif inv.custName??>"${inv.custName?json_string!}"<#else>null</#if>,
+"englishName": <#if inv.customerName??>"${inv.customerName?json_string!}"<#else>null</#if>,
+"arabicName": <#if inv.customerNameAr??>"${inv.customerNameAr?json_string!}"<#elseif inv.customerName??>"${inv.customerName?json_string!}"<#else>null</#if>,
 "contactPersonName": null,
 "contactPersonMobile": null,
 "mobile": null,
@@ -25,11 +26,23 @@
 "street": <#if inv.addressStreet??>"${inv.addressStreet?json_string!}"<#else>null</#if>,
 "bldgNo": <#if inv.buildingNo??>"${inv.buildingNo?json_string!}"<#else>null</#if>,
 "pobox": <#if inv.postalCode??>"${inv.postalCode?json_string!}"<#else>null</#if>
-}</#if>,
+},
 "supplyDate": "${inv.invoiceQIssueDate!}",
 "products": [
 <#list invoiceLines as product>
     {
+    <#if product.prepaymentTaxableAmount?? && isPrepaymentTaxableAmountValid(product)>
+    "isPrepayment": "true",
+    "prepaymentDetails": [
+        {
+            "invoiceDate": "${product.prepaymentInvoiceDate}",
+            "isHistorical": <#if product.isHistorical>"true"<#else>"false"</#if>,
+            "prePaymentTaxAmount": "${cleanNumber(product.prepaymentTaxAmount)}",
+            "prePaymentTaxableAmount": "${cleanNumber(product.prepaymentTaxableAmount)}",
+            "prepaymentInvoiceRef": "${product.prepaymentInvoiceRef}"
+        }
+    ],
+    </#if>
     "quantity": "${product.quantityInvoiced?string("0.000000000")!}",
     "productCode": "${product.productCode!}",
     "netAmount": "${product.lineAmount?string("0.0000")!}",
@@ -52,5 +65,17 @@
 "supplyDate": "${inv.supplyFromZonedDate!}",
 "supplyEndDate": "${inv.supplyEndZonedDate!}",
 "totalTaxAmount":<#if inv.totalTax??>"${inv.totalTax?string("0.00")!0.00}"<#else>null</#if>,
-"totalInvoiceAmount": "${inv.totalDueAmount?string("0.00")!}"
+"totalInvoiceAmount": "${inv.totalAmount?string("0.00")!}"
 }
+<#function isPrepaymentTaxableAmountValid product>
+    <#if
+    product.prepaymentTaxableAmount?string("0.0000") != "0.0000">
+        <#return true>
+    <#else>
+        <#return false>
+    </#if>
+</#function>
+
+<#function cleanNumber input>
+    <#return input?replace("@", "")>
+</#function>
