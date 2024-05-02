@@ -22,6 +22,8 @@ public interface InvoiceHeadersRepository extends JpaRepository<InvoiceHeader, L
 
     Optional<InvoiceHeader> findByInvoiceId(String invoiceId);
 
+    Optional<InvoiceHeader> findByReference(String invoiceQReference);
+
     @Modifying
     @Transactional
     @Query("update InvoiceHeader ih set ih.status=:status where ih.invoiceId=:invoiceId")

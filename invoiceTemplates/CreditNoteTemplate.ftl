@@ -1,5 +1,5 @@
 {
-"invoiceIQReference": <#if inv.originalInvoiceqReference??>"${inv.originalInvoiceqReference}"<#else>"${inv.creditMemoNo!}"</#if>,
+"invoiceIQReference": <#if originalInvoice??>"${originalInvoice.reference}"<#else>"${originalInvoice.invoiceId!}"</#if>,
 "creditNoteNumber": "${inv.invoiceId!}",
 "isHistorical": "${inv.isHistorical?c!}",
 "historicalInvoiceType":<#if inv.isHistorical && inv.invType??>"${inv.invType!}"<#else>null</#if>,

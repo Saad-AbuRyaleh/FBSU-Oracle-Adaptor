@@ -58,6 +58,10 @@ public class CreditNoteTransformer extends AbstractInvoiceTransformer<CreditNote
         return transformedCredits;
     }
     private InvoiceHeader processAndGetOriginalInvoiceInfo(InvoiceHeader credit) {
+        if (Objects.nonNull(credit.getMemoInvoiceQReference())){
+            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findByReference(credit.getMemoInvoiceQReference());
+            return originalInvoice.orElse(null);
+        }
         if (Objects.nonNull(credit.getMemoNo())) {
             Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(credit.getMemoNo());
             return originalInvoice.orElse(null);

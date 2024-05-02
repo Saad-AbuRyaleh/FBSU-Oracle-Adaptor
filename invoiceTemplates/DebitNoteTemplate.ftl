@@ -1,5 +1,5 @@
 {
-"invoiceIQReference": <#if inv.originalInvoiceqReference??>"${inv.originalInvoiceqReference}"<#else>"${inv.creditMemoNo!}"</#if>,
+"invoiceIQReference": <#if originalInvoice??>"${originalInvoice.reference}"<#else>"${originalInvoice.invoiceId!}"</#if>,
 "debitNoteNumber": "${inv.invoiceId!}",
 "isHistorical": "${inv.isHistorical?c!}",
 "historicalInvoiceType":<#if inv.isHistorical && inv.invType??>"${inv.invType!}"<#else>null</#if>,
@@ -44,8 +44,8 @@
     "debitedQuantity": "${product.quantityInvoiced?string("0.000000000")!}",
     "debitedTaxAmount": <#if product.totTax??>"${product.totTax?string("0.0000")!0.00}"<#else>null</#if>,
     "debitedUnitPrice": "${product.unitSellingPrice?string("0.00000")!}",
-
-
+    "taxPercentage":<#if product.taxRate??>"${product.taxRate?string("0")!}"<#else>null</#if>,
+    "productName": <#if product.productName??>"${product.productName?json_string!}"<#elseif product.description??>"${product.description?json_string!}"<#else>null</#if>,
     "description": <#if product.description??>"${product.description?json_string!}"<#else>null</#if>,
     "productCode": "${product.productCode!}",
     "historicalInvoiceLine":<#if inv.isHistorical>{

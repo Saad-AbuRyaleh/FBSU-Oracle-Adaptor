@@ -61,6 +61,10 @@ public class DebitNoteTransformer extends AbstractInvoiceTransformer<DebitNoteRe
     }
 
     private InvoiceHeader processAndGetOriginalInvoiceInfo(InvoiceHeader debit) {
+        if (Objects.nonNull(debit.getMemoInvoiceQReference())){
+            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findByReference(debit.getMemoInvoiceQReference());
+            return originalInvoice.orElse(null);
+        }
         if (Objects.nonNull(debit.getMemoNo())) {
             Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(debit.getMemoNo());
             return originalInvoice.orElse(null);
