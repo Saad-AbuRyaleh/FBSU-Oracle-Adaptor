@@ -66,7 +66,7 @@ public class InvoiceLine {
     private String prepaymentInvoiceDate;
 
     @Column(name = "IS_HISTORICAL")
-    private boolean isHistorical;
+    private Boolean isHistorical;
 
     @Column(name = "PREPAYMENT_TAX_AMOUNT")
     private BigDecimal prepaymentTaxAmount;

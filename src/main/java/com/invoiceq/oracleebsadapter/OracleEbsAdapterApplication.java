@@ -32,4 +32,9 @@ public class OracleEbsAdapterApplication {
         return new ThreadPoolTaskExecutor();
     }
 
+    @Bean(name = "readPrePaymentExecutor")
+    public ThreadPoolTaskExecutor threadPoolReadPrePaymentExecutor() {
+        return new ThreadPoolTaskExecutor();
+    }
+
 }

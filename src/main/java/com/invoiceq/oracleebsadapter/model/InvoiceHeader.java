@@ -55,16 +55,16 @@ public class InvoiceHeader implements Serializable {
     private String customerName;
 
     @Column(name = "CUST_NAME_AR")
-    private String custNameAr;
+    private String customerNameAr;
 
     @Column(name = "CUST_VAT")
-    private String custVat;
+    private String customerVat;
 
     @Column(name = "CUST_IDENT_NUMBER")
-    private String custIdentNumber;
+    private String customerIdentNumber;
 
     @Column(name = "CUST_IDENT_TYPE")
-    private String custIdentType;
+    private String customerIdentType;
 
     @Column(name = "COUNTRY")
     private String country;

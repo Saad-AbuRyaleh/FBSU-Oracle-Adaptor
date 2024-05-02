@@ -1,8 +1,6 @@
 package com.invoiceq.oracleebsadapter.scheduler;
 
-import com.invoiceq.oracleebsadapter.service.CreditNoteService;
-import com.invoiceq.oracleebsadapter.service.DebitNoteService;
-import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
+import com.invoiceq.oracleebsadapter.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class InvoicesReaderScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InvoicesReaderScheduler.class);
+    @Autowired
+    private PrePaymentService prePaymentService;
     @Autowired
     private OutwardInvoiceService outwardInvoiceService;
 
@@ -41,7 +41,27 @@ public class InvoicesReaderScheduler {
 
     @Qualifier("readDebitExecutor")
     @Autowired
-    private ThreadPoolTaskExecutor debiTaskExecutor;
+    private ThreadPoolTaskExecutor debitTaskExecutor;
+
+    @Qualifier("readPrePaymentExecutor")
+    @Autowired
+    private ThreadPoolTaskExecutor prePaymentTaskExecutor;
+
+    @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
+    public void prePaymentReader() {
+        if (prePaymentTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
+            prePaymentTaskExecutor.execute(() -> {
+                LOGGER.info("Start check for unsigned prePayment invoices");
+                try {
+                    prePaymentService.handlePendingInvoices();
+                } catch (Exception e) {
+                    LOGGER.error("error happened", e);
+                }
+                LOGGER.info("Finish checking for unsigned prePayment invoices");
+            });
+        }
+
+    }
 
     @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
     public void invoiceReader() {
@@ -76,8 +96,8 @@ public class InvoicesReaderScheduler {
     }
     @Scheduled(fixedRateString = "${scheduler.delay:PT1M}")
     public void debitReader() {
-        if (debiTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
-            debiTaskExecutor.execute(() -> {
+        if (debitTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
+            debitTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned debit notes");
                 try {
                     debitNoteService.handlePendingDebits();
