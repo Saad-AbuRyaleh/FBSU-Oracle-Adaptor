@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.invoiceq</groupId>
 	<artifactId>fbsu-oracle-adapter</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<name>fbsu-oracle-adapter</name>
 	<description>Fahad Bin Sultan University Adaptor For Integration With Invoice Q</description>
 	<properties>
@@ -82,6 +82,11 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.11.0</version>
 		</dependency>
 	</dependencies>
 

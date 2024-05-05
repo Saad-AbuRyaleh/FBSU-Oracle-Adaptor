@@ -14,7 +14,6 @@ import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
 import com.invoiceq.oracleebsadapter.transformer.OutwardInvoiceTransformer;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +36,7 @@ public class OutwardInvoiceService {
     private final OutwardInvoiceTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
     private final InvoiceAttachmentRepository invoiceAttachmentRepository;
+    private final StorageManager storageManager;
     private static final String INVOICE_TYPE_CODE = "388";
     private static final Logger LOGGER = LoggerFactory.getLogger(OutwardInvoiceService.class);
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -62,7 +59,8 @@ public class OutwardInvoiceService {
                 LOGGER.info("Success Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(uploadOutwardInvoiceRequest.getInvoiceNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference(),uploadOutwardInvoiceRequest.getInvoiceNumber());
+                String directLink = response.getBody().getDirectLink();
+                writePdfData(response.getBody().getInvoiceqReference(),uploadOutwardInvoiceRequest.getInvoiceNumber(),directLink);
             } else {
                 LOGGER.info("Failed Integration for Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, uploadOutwardInvoiceRequest.getInvoiceNumber());
@@ -76,7 +74,7 @@ public class OutwardInvoiceService {
 
     }
 
-    private void writePdfData(String invoiceqReference, String invoiceNumber) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String invoiceNumber,String directLink) throws InterruptedException {
         Thread.sleep(5000);
         OutwardInvoiceOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
@@ -84,7 +82,7 @@ public class OutwardInvoiceService {
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
             invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
-            invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            invoiceAttachment.setPdfFilePath(directLink);
             Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(invoiceNumber);
             invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
@@ -95,6 +93,7 @@ public class OutwardInvoiceService {
         OutwardInvoiceOperationResponse outwardInvoiceOperationResponse = null;
         try{
             outwardInvoiceOperationResponse= invoiceqConnector.getInvoicePdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3,orgKey,channelId);
+            storageManager.writeFileToStorage(outwardInvoiceOperationResponse.getBody().getPdfFileName(), Base64.getDecoder().decode(outwardInvoiceOperationResponse.getBody().getBase64PDF()));
         }
         catch (Exception e){
             LOGGER.error("error in get invoice pdf",e);

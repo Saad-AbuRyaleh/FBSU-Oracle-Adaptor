@@ -21,10 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +36,7 @@ public class PrePaymentService {
     private final PrePaymentTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
     private final InvoiceAttachmentRepository invoiceAttachmentRepository;
+    private final StorageManager storageManager;
     private static final String PREPAYMENT_TYPE_CODE = "386";
     private static final Logger LOGGER = LoggerFactory.getLogger(PrePaymentService.class);
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -59,7 +57,8 @@ public class PrePaymentService {
                 LOGGER.info("Success Integration for PrePayment Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(uploadOutwardInvoiceRequest.getInvoiceNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference(),uploadOutwardInvoiceRequest.getInvoiceNumber());
+                String directLink = response.getBody().getDirectLink();
+                writePdfData(response.getBody().getInvoiceqReference(),uploadOutwardInvoiceRequest.getInvoiceNumber(),directLink);
             } else {
                 LOGGER.info("Failed Integration for PrePayment Invoice [{}]", uploadOutwardInvoiceRequest.getInvoiceNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, uploadOutwardInvoiceRequest.getInvoiceNumber());
@@ -72,7 +71,7 @@ public class PrePaymentService {
         }
 
     }
-    private void writePdfData(String invoiceqReference, String invoiceNumber) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String invoiceNumber,String directLink) throws InterruptedException {
         Thread.sleep(5000);
         OutwardInvoiceOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
@@ -80,7 +79,7 @@ public class PrePaymentService {
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
             invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
-            invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            invoiceAttachment.setPdfFilePath(directLink);
             Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(invoiceNumber);
             invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
@@ -90,6 +89,7 @@ public class PrePaymentService {
         OutwardInvoiceOperationResponse outwardInvoiceOperationResponse = null;
         try{
             outwardInvoiceOperationResponse= invoiceqConnector.getInvoicePdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3,orgKey,channelId);
+            storageManager.writeFileToStorage(outwardInvoiceOperationResponse.getBody().getPdfFileName(), Base64.getDecoder().decode(outwardInvoiceOperationResponse.getBody().getBase64PDF()));
         }
         catch (Exception e){
             LOGGER.error("error in get invoice pdf",e);

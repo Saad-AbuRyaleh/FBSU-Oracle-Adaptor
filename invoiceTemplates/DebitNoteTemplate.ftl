@@ -62,5 +62,5 @@
 <#if product_has_next>,</#if>
 </#list>],
 "debitReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
-"narration": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>
+"narration": <#if inv.notes??>"${inv.notes?json_string!}"<#else>null</#if>
 }

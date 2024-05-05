@@ -21,10 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +40,7 @@ public class DebitNoteService {
     private final InvoiceqConnector invoiceqConnector;
     private final InvoiceAttachmentRepository invoiceAttachmentRepository;
     private final DebitNoteTransformer transformer;
+    private final StorageManager storageManager;
     public void handlePendingDebits() {
         Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, DEBIT_TYPE_CODE);
         if (invoiceHeaderList.isPresent() && !CollectionUtils.isEmpty(invoiceHeaderList.get())) {
@@ -61,7 +59,8 @@ public class DebitNoteService {
                 LOGGER.info("Success Integration for Debit [{}]", debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(debitNoteRequest.getDebitNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference(),debitNoteRequest.getDebitNoteNumber());
+                String directLink = response.getBody().getDirectLink();
+                writePdfData(response.getBody().getInvoiceqReference(),debitNoteRequest.getDebitNoteNumber(),directLink);
             } else {
                 LOGGER.info("Failed Integration for Debit [{}]", debitNoteRequest.getDebitNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, debitNoteRequest.getDebitNoteNumber());
@@ -75,7 +74,7 @@ public class DebitNoteService {
         }
     }
 
-    private void writePdfData(String invoiceqReference, String debitNoteNumber) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String debitNoteNumber,String directLink) throws InterruptedException {
         Thread.sleep(5000);
         DebitNoteOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
@@ -83,7 +82,7 @@ public class DebitNoteService {
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
             invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
-            invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            invoiceAttachment.setPdfFilePath(directLink);
             Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(debitNoteNumber);
             invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
@@ -94,6 +93,7 @@ public class DebitNoteService {
         DebitNoteOperationResponse debitNoteOperationResponse = null;
         try{
             debitNoteOperationResponse= invoiceqConnector.getDebitPdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3,orgKey,channelId);
+            storageManager.writeFileToStorage(debitNoteOperationResponse.getBody().getPdfFileName(), Base64.getDecoder().decode(debitNoteOperationResponse.getBody().getBase64PDF()));
         }
         catch (Exception e){
             LOGGER.error("error in get invoice pdf",e);

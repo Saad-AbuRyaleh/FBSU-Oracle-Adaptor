@@ -47,7 +47,7 @@
     }<#if product_has_next>,</#if>
 </#list>],
 "invoiceType": "${inv.invType!}",
-"narration": <#if inv.creditMemoComment??>"${inv.creditMemoComment?json_string!}"<#else>null</#if>,
+"narration": <#if inv.notes??>"${inv.notes?json_string!}"<#else>null</#if>,
 "invoiceNumber": "${inv.invoiceId!}",
 "currencyIsoCode": "SAR",
 "issueDate": "${inv.invoiceQIssueDate!}",

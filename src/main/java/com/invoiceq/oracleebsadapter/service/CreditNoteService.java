@@ -42,6 +42,7 @@ public class CreditNoteService {
     private final CreditNoteTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
     private final InvoiceAttachmentRepository invoiceAttachmentRepository;
+    private final StorageManager storageManager;
     private final static String CREDIT_TYPE_CODE = "381";
 
     public void handlePendingCredits() {
@@ -62,7 +63,8 @@ public class CreditNoteService {
                 LOGGER.info("Success Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.SUCCESS, creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateSuccessfullResponse(creditNoteRequest.getCreditNoteNumber(),response.getBody().getInvoiceqReference(),response.getBody().getQrCode(),response.getBody().getSubmittedPayableRoundingAmount(), new Timestamp(new Date().getTime()));
-                writePdfData(response.getBody().getInvoiceqReference(),creditNoteRequest.getCreditNoteNumber());
+                String directLink = response.getBody().getDirectLink();
+                writePdfData(response.getBody().getInvoiceqReference(),creditNoteRequest.getCreditNoteNumber(),directLink);
             } else {
                 LOGGER.info("Failed Integration for Credit [{}]", creditNoteRequest.getCreditNoteNumber());
                 invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, creditNoteRequest.getCreditNoteNumber());
@@ -76,7 +78,7 @@ public class CreditNoteService {
         }
     }
 
-    private void writePdfData(String invoiceqReference, String creditNoteNumber) throws InterruptedException {
+    private void writePdfData(String invoiceqReference, String creditNoteNumber,String directLink) throws InterruptedException {
         Thread.sleep(5000);
         CreditNoteOperationResponse response = getInvoicePdf(invoiceqReference);
         if(BooleanUtils.isTrue(response.getValid()) && Objects.nonNull(response.getBody())) {
@@ -84,7 +86,7 @@ public class CreditNoteService {
             invoiceAttachment.setPdfFileName(response.getBody().getPdfFileName());
             invoiceAttachment.setStatus(ZatcaStatus.SUCCESS.name());
             invoiceAttachment.setCreatedOn(new Timestamp(new Date().getTime()));
-            invoiceAttachment.setPdfFilePath(response.getBody().getDirectLink());
+            invoiceAttachment.setPdfFilePath(directLink);
             Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findByInvoiceId(creditNoteNumber);
             invoiceHeader.ifPresent(header -> invoiceAttachment.setInvoiceSequence(header.getInvoiceSequence()));
             invoiceAttachmentRepository.save(invoiceAttachment);
@@ -95,6 +97,7 @@ public class CreditNoteService {
         CreditNoteOperationResponse creditNoteOperationResponse = null;
         try{
             creditNoteOperationResponse= invoiceqConnector.getCreditPdfByInvoiceQReference(invoiceqReference, ResponseTemplate.PDF_A3,orgKey,channelId);
+            storageManager.writeFileToStorage(creditNoteOperationResponse.getBody().getPdfFileName(), Base64.getDecoder().decode(creditNoteOperationResponse.getBody().getBase64PDF()));
         }
         catch (Exception e){
             LOGGER.error("error in get invoice pdf",e);
