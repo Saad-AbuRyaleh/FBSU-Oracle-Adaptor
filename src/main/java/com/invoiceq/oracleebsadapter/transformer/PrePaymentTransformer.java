@@ -28,7 +28,7 @@ public class PrePaymentTransformer extends AbstractInvoiceTransformer<UploadOutw
         invoices.forEach(invoiceHeader -> {
             try {
                 Long begin = System.currentTimeMillis();
-                List<InvoiceLine> invoiceLines = invoiceLineRepository.findAllByInvoiceSequence(invoiceHeader.getInvoiceSequence());
+                List<InvoiceLine> invoiceLines = invoiceHeader.getInvoiceLines();
                 StringWriter writer = new StringWriter();
                 Map<String, Object> data = new HashMap<>();
                 reformatObjectData(invoiceHeader);

@@ -32,15 +32,16 @@
 <#list invoiceLines as product>
     {
     <#if product.prepaymentTaxableAmount?? && isPrepaymentTaxableAmountValid(product)>
-    "isPrepayment": "true",
-    "prepaymentDetails": [
+        "prepaymentDetails": [
+        <#list product.prepaymentDetails as prepaymentDetail>
         {
-            "invoiceDate": "${product.prepaymentInvoiceDate}",
-            "isHistorical": <#if product.isHistorical>"true"<#else>"false"</#if>,
-            "prePaymentTaxAmount": "${cleanNumber(product.prepaymentTaxAmount)}",
-            "prePaymentTaxableAmount": "${cleanNumber(product.prepaymentTaxableAmount)}",
-            "prepaymentInvoiceRef": "${product.prepaymentInvoiceRef}"
-        }
+            "invoiceDate": "${prepaymentDetail.prePaymentInvoiceDate!}",
+            "isHistorical": <#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"true"<#else>"false"</#if>,
+            "prePaymentTaxAmount": "${prepaymentDetail.prepaymentTaxAmount?string("0.0000")!}",
+            "prePaymentTaxableAmount": "${prepaymentDetail.prepaymentTaxableAmount?string("0.0000")!}",
+            "prepaymentInvoiceRef":<#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"${prepaymentDetail.invoiceId!}"<#else>"${prepaymentDetail.invoiceQReference!}"</#if>
+        }<#if prepaymentDetail_has_next>,</#if>
+        </#list>
     ],
     </#if>
     "quantity": "${product.quantityInvoiced?string("0.000000000")!}",

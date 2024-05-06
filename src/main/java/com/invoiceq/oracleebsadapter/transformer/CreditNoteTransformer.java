@@ -31,8 +31,7 @@ public class CreditNoteTransformer extends AbstractInvoiceTransformer<CreditNote
                 InvoiceHeader originalInvoice = processAndGetOriginalInvoiceInfo(credit);
                 if (readyToSend(Objects.nonNull(originalInvoice) && Objects.equals(originalInvoice.getStatus(), ZatcaStatus.SUCCESS), credit.getIsHistorical())) {
                     reformatObjectData(credit);
-                    List<InvoiceLine> invoiceLines = invoiceLineRepository.findAllByInvoiceSequence(credit.getInvoiceSequence());
-                    List<InvoiceLine> originalInvoiceLines = credit.getIsHistorical() ? null : invoiceLineRepository.findAllByInvoiceSequence(originalInvoice.getInvoiceSequence());
+                    List<InvoiceLine> invoiceLines = credit.getInvoiceLines();
                     StringWriter writer = new StringWriter();
                     Map<String, Object> data = new HashMap<>();
                     data.put("inv", credit);

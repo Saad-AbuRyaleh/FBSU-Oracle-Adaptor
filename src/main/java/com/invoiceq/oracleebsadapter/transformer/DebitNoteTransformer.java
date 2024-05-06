@@ -29,8 +29,7 @@ public class DebitNoteTransformer extends AbstractInvoiceTransformer<DebitNoteRe
                 InvoiceHeader originalInvoice = processAndGetOriginalInvoiceInfo(debit);
                 if (readyToSend(Objects.nonNull(originalInvoice) && Objects.equals(originalInvoice.getStatus(), ZatcaStatus.SUCCESS), debit.getIsHistorical())) {
                     reformatObjectData(debit);
-                    List<InvoiceLine> invoiceLines = invoiceLineRepository.findAllByInvoiceSequence(debit.getInvoiceSequence());
-                    List<InvoiceLine> originalInvoiceLines = debit.getIsHistorical() ? null : invoiceLineRepository.findAllByInvoiceSequence(originalInvoice.getInvoiceSequence());
+                    List<InvoiceLine> invoiceLines = debit.getInvoiceLines();
                     StringWriter writer = new StringWriter();
                     Map<String, Object> data = new HashMap<>();
                     data.put("inv", debit);

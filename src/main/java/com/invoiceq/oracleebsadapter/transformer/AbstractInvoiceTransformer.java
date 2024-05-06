@@ -9,6 +9,7 @@ import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
 import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
 import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
 import com.invoiceq.oracleebsadapter.repository.InvoiceLineRepository;
+import com.invoiceq.oracleebsadapter.repository.PrepaymentRepository;
 import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
@@ -49,7 +50,8 @@ public abstract class AbstractInvoiceTransformer<T> {
     @Autowired
     protected InvoiceHeadersRepository invoiceHeadersRepository;
 
-
+    @Autowired
+    protected PrepaymentRepository prepaymentRepository;
     public abstract List<T> transform(List<InvoiceHeader> invoices);
 
     protected Template getMarkerTemplate(String templateName) {
