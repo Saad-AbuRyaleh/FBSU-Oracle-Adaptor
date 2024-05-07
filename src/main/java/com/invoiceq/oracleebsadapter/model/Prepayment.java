@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "T_PREPAYMENT")
+@Table(name = "T_PREPAID_INVOICES")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,22 +19,22 @@ public class Prepayment implements Serializable {
     @Column(name = "INVOICE_SEQ ", nullable = false)
     private Long invoiceSequence;
 
-    @Column(name = "INVOICE_ID", nullable = false)
+    @Column(name = "PREPAYMENT_INVOICE_NO", nullable = false)
     private String invoiceId;
 
-    @Column(name = "INVOICE_DATE")
+    @Column(name = "PREPAYMENT_INVOICE_DATE")
     private String invoiceDate;
 
     @Column(name = "IS_HISTORICAL")
     private Boolean isHistorical;
 
-    @Column(name = "PREPAYMNT_TAX_AMOUNT")
+    @Column(name = "PREPAYMENT_TAX_AMOUNT")
     private BigDecimal prepaymentTaxAmount;
 
     @Column(name = "PREPAYMENT_TAXABLE_AMOUNT")
     private BigDecimal prepaymentTaxableAmount;
 
-    @Column(name = "INVOICEQ_REF")
+    @Column(name = "PREPAYMENT_INVOICE_REF")
     private String invoiceQReference;
 
     @Transient
