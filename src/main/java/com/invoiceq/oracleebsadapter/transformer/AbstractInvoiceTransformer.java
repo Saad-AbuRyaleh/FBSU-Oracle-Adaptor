@@ -111,4 +111,55 @@ public abstract class AbstractInvoiceTransformer<T> {
         invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.TECHNICAL_FAILED, invoiceId);
         invoiceHeadersRepository.updateFailedStatus(invoiceId,message);
     }
+    protected boolean checkTheLinkedInvoices(InvoiceHeader memo) {
+        String invoiceReferences = memo.getMemoNo();
+        String invoiceQReferences = memo.getMemoInvoiceQReference();
+        boolean isLinkedToValidInvoices = StringUtils.isNotBlank(invoiceReferences) || StringUtils.isNotBlank(invoiceQReferences);
+        if (isLinkedToValidInvoices){
+            return true;
+        }
+        updateStatusForUnlinkedMemo(memo);
+        return false;
+    }
+    private void updateStatusForUnlinkedMemo(InvoiceHeader memo) {
+        LOGGER.info("Update Status To [{}] For Unlinked Memo [{}]", ZatcaStatus.BUSINESS_FAILED,memo.getInvoiceId());
+        invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, memo.getInvoiceId());
+        String errorMessage = "The Memo#"+memo.getInvoiceId()+" Still Not Linked to Invoice";
+        invoiceHeadersRepository.updateFailedStatus(memo.getInvoiceId(),errorMessage);
+    }
+    protected Map <String,Object> retrieveGroupDetails (InvoiceHeader memo){
+        Map <String,Object> map = new HashMap<>();
+        String invoiceReferences = memo.getMemoNo();
+        String invoiceQReferences = memo.getMemoInvoiceQReference();
+        boolean isGroupReference= (StringUtils.isNotBlank(invoiceReferences) && invoiceReferences.contains(",")) || (StringUtils.isNotBlank(invoiceQReferences) && invoiceQReferences.contains(","));
+        String references = StringUtils.defaultIfBlank(invoiceQReferences, invoiceReferences);
+        String invoiceQReference = isGroupReference?references.split(",")[0]:references;
+        map.put("isGroupReference",isGroupReference);
+        map.put("GroupReference",references);
+        map.put("isHistorical",memo.getIsHistorical());
+        map.put("invoiceQReference",invoiceQReference);
+        return map;
+    }
+protected boolean isMemoReadyToSend(Map<String, Object> groupContext) {
+    boolean isHistorical = (boolean) groupContext.getOrDefault("isHistorical", false);
+    boolean isGroupReference = (boolean) groupContext.getOrDefault("isGroupReference", false);
+    String reference = (String) groupContext.getOrDefault("invoiceQReference","");
+    if (isHistorical) {
+        return true;
+    }
+
+    if (!isGroupReference) {
+        return isInvoiceReady(reference);
+    }
+
+    String[] references = groupContext.getOrDefault("GroupReference", "").toString().split(",");
+    return Arrays.stream(references)
+            .map(this::isInvoiceReady)
+            .reduce(false, (a, b) -> a || b);
+}
+
+    private boolean isInvoiceReady(String invoiceReference) {
+        Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findByReference(invoiceReference);
+        return originalInvoice.map(invoice -> invoice.getStatus() == ZatcaStatus.SUCCESS).orElse(false);
+    }
 }

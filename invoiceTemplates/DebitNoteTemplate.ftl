@@ -1,5 +1,12 @@
 {
-"invoiceIQReference": <#if originalInvoice??>"${originalInvoice.reference}"<#else>"${originalInvoice.invoiceId!}"</#if>,
+<#if isGroupReference?? && isGroupReference?c =="true">
+    "groupedInvoiceIQReferences": [
+    <#list groupedInvoiceIQReferences?split(",") as reference>
+        "${reference}"<#if reference_has_next>,</#if>
+    </#list>
+    ],
+</#if>
+"invoiceIQReference":"${invoiceQReference!}",
 "debitNoteNumber": "${inv.invoiceId!}",
 "isHistorical": "${inv.isHistorical?c!}",
 "historicalInvoiceType":<#if inv.isHistorical && inv.invType??>"${inv.invType!}"<#else>null</#if>,

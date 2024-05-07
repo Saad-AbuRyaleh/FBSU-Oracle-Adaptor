@@ -26,49 +26,39 @@ public class CreditNoteTransformer extends AbstractInvoiceTransformer<CreditNote
         List<CreditNoteRequest> transformedCredits = new ArrayList<>();
         Template template = getMarkerTemplate("CreditNoteTemplate.ftl");
         credits.forEach(credit -> {
-            try {
-                Long begin = System.currentTimeMillis();
-                InvoiceHeader originalInvoice = processAndGetOriginalInvoiceInfo(credit);
-                if (readyToSend(Objects.nonNull(originalInvoice) && Objects.equals(originalInvoice.getStatus(), ZatcaStatus.SUCCESS), credit.getIsHistorical())) {
-                    reformatObjectData(credit);
-                    List<InvoiceLine> invoiceLines = credit.getInvoiceLines();
-                    StringWriter writer = new StringWriter();
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("inv", credit);
-                    data.put("invoiceLines", invoiceLines);
-                    data.put("originalInvoice", originalInvoice);
-                    data.put("transformer", this);
-                    LOGGER.info("Data is {}", data);
-                    template.process(data, writer);
-                    CreditNoteRequest creditNoteRequest = mapper.readValue(writer.toString(), CreditNoteRequest.class);
-                    transformedCredits.add(creditNoteRequest);
-                    invoiceHeadersRepository.updateReadStatus(ZatcaStatus.ZATCA_LOCKED, credit.getInvoiceId());
-                    Long end = System.currentTimeMillis();
-                    LOGGER.info("time to execute the transformation {} millisecond", end - begin);
+            boolean isValidLinking = checkTheLinkedInvoices(credit);
+            if (isValidLinking){
+                try {
+                    Long begin = System.currentTimeMillis();
+                    Map<String, Object> groupContext = retrieveGroupDetails(credit);
+                    boolean isReadyToSend = isMemoReadyToSend(groupContext);
+                    if (isReadyToSend) {
+                        reformatObjectData(credit);
+                        List<InvoiceLine> invoiceLines = credit.getInvoiceLines();
+                        StringWriter writer = new StringWriter();
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("inv", credit);
+                        data.put("invoiceLines", invoiceLines);
+                        data.put("isGroupReference",groupContext.get("isGroupReference"));
+                        data.put("invoiceQReference",groupContext.get("invoiceQReference"));
+                        data.put("groupedInvoiceIQReferences",groupContext.get("GroupReference"));
+                        data.put("transformer", this);
+                        LOGGER.info("Data is {}", data);
+                        template.process(data, writer);
+                        CreditNoteRequest creditNoteRequest = mapper.readValue(writer.toString(), CreditNoteRequest.class);
+                        transformedCredits.add(creditNoteRequest);
+                        invoiceHeadersRepository.updateReadStatus(ZatcaStatus.ZATCA_LOCKED, credit.getInvoiceId());
+                        Long end = System.currentTimeMillis();
+                        LOGGER.info("time to execute the transformation {} millisecond", end - begin);
+                    }
+                } catch (TemplateException | IOException e) {
+                    LOGGER.error("error happened {}", e.getMessage());
+                    handleFTLException(e.getMessage(),credit.getInvoiceId());
+
                 }
-
-            } catch (TemplateException | IOException e) {
-                LOGGER.error("error happened {}", e.getMessage());
-                handleFTLException(e.getMessage(),credit.getInvoiceId());
-
             }
 
         });
         return transformedCredits;
-    }
-    private InvoiceHeader processAndGetOriginalInvoiceInfo(InvoiceHeader credit) {
-        if (Objects.nonNull(credit.getMemoInvoiceQReference())){
-            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findByReference(credit.getMemoInvoiceQReference());
-            return originalInvoice.orElse(null);
-        }
-        if (Objects.nonNull(credit.getMemoNo())) {
-            Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(credit.getMemoNo());
-            return originalInvoice.orElse(null);
-        }
-        return credit;
-    }
-
-    private boolean readyToSend(Boolean originalInvoiceExistAndSuccess, Boolean isHistorical) {
-        return BooleanUtils.isTrue(originalInvoiceExistAndSuccess) || BooleanUtils.isTrue(isHistorical);
     }
 }
