@@ -45,7 +45,19 @@
 "debitProducts":[
 <#list invoiceLines as product>
 {
-
+    <#if product.prepaymentTaxableAmount?? && isPrepaymentTaxableAmountValid(product)>
+        "prepaymentDetails": [
+        <#list product.prepaymentDetails as prepaymentDetail>
+            {
+            "invoiceDate": "${prepaymentDetail.prePaymentInvoiceDate!}",
+            "isHistorical": <#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"true"<#else>"false"</#if>,
+            "prePaymentTaxAmount": "${prepaymentDetail.prepaymentTaxAmount?string("0.0000")!}",
+            "prePaymentTaxableAmount": "${prepaymentDetail.prepaymentTaxableAmount?string("0.0000")!}",
+            "prepaymentInvoiceRef":<#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"${prepaymentDetail.invoiceId!}"<#else>"${prepaymentDetail.invoiceQReference!}"</#if>
+            }<#if prepaymentDetail_has_next>,</#if>
+        </#list>
+        ],
+    </#if>
     "debitDiscountAmount": "${product.discount?string("0.0000")!}",
     "debitedNetAmount":  "${product.lineAmount?string("0.0000")!}",
     "debitedQuantity": "${product.quantityInvoiced?string("0.000000000")!}",
@@ -74,3 +86,11 @@
 "debitReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
 "narration": <#if inv.notes??>"${inv.notes?json_string!}"<#else>null</#if>
 }
+<#function isPrepaymentTaxableAmountValid product>
+    <#if
+    product.prepaymentTaxableAmount?string("0.0000") != "0.0000">
+        <#return true>
+    <#else>
+        <#return false>
+    </#if>
+</#function>

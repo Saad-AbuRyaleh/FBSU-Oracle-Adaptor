@@ -36,6 +36,8 @@ public class Prepayment implements Serializable {
 
     @Column(name = "PREPAYMENT_INVOICE_REF")
     private String invoiceQReference;
+    @Column(name = "LINE_NUMBER")
+    private String lineNumber;
 
     @Transient
     private String prePaymentInvoiceDate;

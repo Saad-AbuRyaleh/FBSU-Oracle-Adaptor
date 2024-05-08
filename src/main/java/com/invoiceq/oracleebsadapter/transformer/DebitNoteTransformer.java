@@ -33,6 +33,7 @@ public class DebitNoteTransformer extends AbstractInvoiceTransformer<DebitNoteRe
                     if (isReadyToSend) {
                         reformatObjectData(debit);
                         List<InvoiceLine> invoiceLines = debit.getInvoiceLines();
+                        addPrePaymentDetailsIfExists (invoiceLines);
                         StringWriter writer = new StringWriter();
                         Map<String, Object> data = new HashMap<>();
                         data.put("inv", debit);

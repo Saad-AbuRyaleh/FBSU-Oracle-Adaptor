@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface PrepaymentRepository extends JpaRepository<Prepayment,Long> {
-    Optional<Prepayment> findByInvoiceId(String invoiceId);
+    Optional<Prepayment> findByInvoiceIdAndInvoiceSequenceAndLineNumber(String invoiceId,Long invoiceSeq ,String lineNumber);
 }

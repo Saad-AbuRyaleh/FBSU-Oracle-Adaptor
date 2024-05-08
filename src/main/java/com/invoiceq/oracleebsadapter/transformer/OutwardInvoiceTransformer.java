@@ -1,22 +1,15 @@
 package com.invoiceq.oracleebsadapter.transformer;
 
 import com.Invoiceq.connector.model.outward.UploadOutwardInvoiceRequest;
-import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
-import com.invoiceq.oracleebsadapter.model.InvoiceLine;
-import com.invoiceq.oracleebsadapter.model.Prepayment;
-import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
+import com.invoiceq.oracleebsadapter.model.*;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -51,58 +44,6 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
             }
         });
         return transformedInvoices;
-    }
-
-    private void addPrePaymentDetailsIfExists(List<InvoiceLine> invoiceLines) {
-        if (!CollectionUtils.isEmpty(invoiceLines)) {
-        invoiceLines.forEach(line -> {
-            line.setPrepaymentDetails(extractPrePaymentDetails(line));
-        });
-        }
-    }
-
-    private List<Prepayment> extractPrePaymentDetails(InvoiceLine invoiceLine) {
-        List<Prepayment> prepaymentDetailsList = new ArrayList<>();
-            if (StringUtils.isNotBlank(invoiceLine.getPrepaymentInvoiceRef())){
-                String [] references = new String[0];
-                String prepaymentInvoiceRef= invoiceLine.getPrepaymentInvoiceRef();
-                if (prepaymentInvoiceRef.contains(",")){
-                    references = prepaymentInvoiceRef.split(",");
-                }else {
-                    references = new String[]{prepaymentInvoiceRef};
-                }
-                processPrepayment(references,prepaymentDetailsList);
-            }
-        return prepaymentDetailsList;
-    }
-
-    private void processPrepayment(String[] references, List<Prepayment> prepaymentDetailsList) {
-        if (!CollectionUtils.isEmpty(Arrays.asList(references))){
-            for (String reference : references) {
-                Prepayment linePrepaymentDetails =new Prepayment();
-                Optional<Prepayment> prepaymentInfo = prepaymentRepository.findByInvoiceId(reference);
-                if (prepaymentInfo.isPresent()){
-                    boolean isHistorical = prepaymentInfo.get().getIsHistorical();
-                    linePrepaymentDetails.setInvoiceId(prepaymentInfo.get().getInvoiceId());
-                    linePrepaymentDetails.setInvoiceQReference(StringUtils.defaultIfBlank(prepaymentInfo.get().getInvoiceQReference(),searchForInvoiceQReference(prepaymentInfo.get().getInvoiceId())));
-                    linePrepaymentDetails.setIsHistorical(isHistorical);
-                    linePrepaymentDetails.setInvoiceDate(prepaymentInfo.get().getInvoiceDate());
-                    linePrepaymentDetails.setPrePaymentInvoiceDate(LocalDateTime.parse(prepaymentInfo.get().getInvoiceDate(), inputFormatter).atZone(ZoneId.of("Asia/Riyadh")).format(outputFormatter));
-                    linePrepaymentDetails.setPrepaymentTaxAmount(prepaymentInfo.get().getPrepaymentTaxAmount());
-                    linePrepaymentDetails.setPrepaymentTaxableAmount(prepaymentInfo.get().getPrepaymentTaxableAmount());
-                }
-                prepaymentDetailsList.add(linePrepaymentDetails);
-            }
-
-        }
-    }
-
-    private String searchForInvoiceQReference(String invoiceId) {
-        Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(invoiceId);
-        if (invoiceHeader.isPresent()){
-            return invoiceHeader.get().getReference();
-        }
-        return "";
     }
 
 }
