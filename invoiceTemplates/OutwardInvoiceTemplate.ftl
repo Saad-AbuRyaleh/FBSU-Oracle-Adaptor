@@ -45,7 +45,7 @@
     ],
     </#if>
     "quantity": "${product.quantityInvoiced?string("0.000000000")!}",
-    "productCode": "${product.productCode!}",
+    "productCode": "${cleanNumber(product_index+1)}_${product.productCode!}",
     "netAmount": "${product.lineAmount?string("0.0000")!}",
     "unitCost": "${product.unitSellingPrice?string("0.00000")!}",
     "taxPercentage": <#if product.taxRate??>"${product.taxRate?string("0")!}"<#else>null</#if>,
