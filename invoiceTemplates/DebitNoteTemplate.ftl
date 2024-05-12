@@ -1,5 +1,12 @@
 {
-"invoiceIQReference": <#if originalInvoice??>"${originalInvoice.reference}"<#else>"${originalInvoice.invoiceId!}"</#if>,
+<#if isGroupReference?? && isGroupReference?c =="true">
+    "groupedInvoiceIQReferences": [
+    <#list groupedInvoiceIQReferences?split(",") as reference>
+        "${reference}"<#if reference_has_next>,</#if>
+    </#list>
+    ],
+</#if>
+"invoiceIQReference":"${invoiceQReference!}",
 "debitNoteNumber": "${inv.invoiceId!}",
 "isHistorical": "${inv.isHistorical?c!}",
 "historicalInvoiceType":<#if inv.isHistorical && inv.invType??>"${inv.invType!}"<#else>null</#if>,
@@ -38,7 +45,19 @@
 "debitProducts":[
 <#list invoiceLines as product>
 {
-
+    <#if product.prepaymentTaxableAmount?? && isPrepaymentTaxableAmountValid(product)>
+        "prepaymentDetails": [
+        <#list product.prepaymentDetails as prepaymentDetail>
+            {
+            "invoiceDate": "${prepaymentDetail.prePaymentInvoiceDate!}",
+            "isHistorical": <#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"true"<#else>"false"</#if>,
+            "prePaymentTaxAmount": "${prepaymentDetail.prepaymentTaxAmount?string("0.0000")!}",
+            "prePaymentTaxableAmount": "${prepaymentDetail.prepaymentTaxableAmount?string("0.0000")!}",
+            "prepaymentInvoiceRef":<#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"${prepaymentDetail.invoiceId!}"<#else>"${prepaymentDetail.invoiceQReference!}"</#if>
+            }<#if prepaymentDetail_has_next>,</#if>
+        </#list>
+        ],
+    </#if>
     "debitDiscountAmount": "${product.discount?string("0.0000")!}",
     "debitedNetAmount":  "${product.lineAmount?string("0.0000")!}",
     "debitedQuantity": "${product.quantityInvoiced?string("0.000000000")!}",
@@ -47,7 +66,10 @@
     "taxPercentage":<#if product.taxRate??>"${product.taxRate?string("0")!}"<#else>null</#if>,
     "productName": <#if product.productName??>"${product.productName?json_string!}"<#elseif product.description??>"${product.description?json_string!}"<#else>null</#if>,
     "description": <#if product.description??>"${product.description?json_string!}"<#else>null</#if>,
-    "productCode": "${product.productCode!}",
+    "productCode": "${cleanNumber(product_index+1)}_${product.productCode!}",
+    "exemptionPercentage":  <#if product.taxRate?? && product.taxRate == 0>100<#else>null</#if>,
+    "exemptionReasonCode":<#if product.exemptionCode??>"${product.exemptionCode!}"<#else>null</#if>,
+    "exemptionOtherTypeDesc":<#if product.exemptionOtherTypeDesc??>"${product.exemptionOtherTypeDesc!}"<#else>null</#if>,
     "historicalInvoiceLine":<#if inv.isHistorical>{
         "productName": <#if product.productName??>"${product.productName?json_string!}"<#elseif product.description??>"${product.description?json_string!}"<#else>null</#if>,
         "invoicedLineTotalAmountWithTax" :"${product.lineAmount?string("0.0000")!}",
@@ -64,3 +86,14 @@
 "debitReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
 "narration": <#if inv.notes??>"${inv.notes?json_string!}"<#else>null</#if>
 }
+<#function isPrepaymentTaxableAmountValid product>
+    <#if
+    product.prepaymentTaxableAmount?string("0.0000") != "0.0000">
+        <#return true>
+    <#else>
+        <#return false>
+    </#if>
+</#function>
+<#function cleanNumber input>
+    <#return input?replace("@", "")>
+</#function>

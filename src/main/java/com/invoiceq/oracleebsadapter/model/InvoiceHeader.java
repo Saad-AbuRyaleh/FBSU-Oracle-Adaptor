@@ -9,6 +9,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
 
 
 @Entity
@@ -20,6 +21,10 @@ public class InvoiceHeader implements Serializable {
     @Id
     @Column(name = "INVOICE_SEQ ", nullable = false)
     private Long invoiceSequence;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    @JoinColumn(name="INVOICE_SEQ", referencedColumnName="INVOICE_SEQ")
+    private List<InvoiceLine> invoiceLines;
 
     @Column(name = "INVOICE_ID", nullable = false)
     private String invoiceId;

@@ -1,13 +1,9 @@
 package com.invoiceq.oracleebsadapter.transformer;
 
-import com.Invoiceq.connector.model.creditNote.InvoiceLevelAllowance;
 import com.Invoiceq.connector.model.outward.UploadOutwardInvoiceRequest;
-import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
-import com.invoiceq.oracleebsadapter.model.InvoiceLine;
-import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
+import com.invoiceq.oracleebsadapter.model.*;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,7 +23,8 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
         invoices.forEach(invoiceHeader -> {
             try {
                 Long begin = System.currentTimeMillis();
-                List<InvoiceLine> invoiceLines = invoiceLineRepository.findAllByInvoiceSequence(invoiceHeader.getInvoiceSequence());
+                List<InvoiceLine> invoiceLines = invoiceHeader.getInvoiceLines();
+                addPrePaymentDetailsIfExists (invoiceLines);
                 StringWriter writer = new StringWriter();
                 Map<String, Object> data = new HashMap<>();
                 reformatObjectData(invoiceHeader);
@@ -48,6 +45,5 @@ public class OutwardInvoiceTransformer extends AbstractInvoiceTransformer<Upload
         });
         return transformedInvoices;
     }
-
 
 }

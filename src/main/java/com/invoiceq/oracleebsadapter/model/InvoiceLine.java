@@ -4,11 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "T_INVOICE_LINES")
@@ -16,12 +14,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InvoiceLine {
-    @Id
-    @Column(name = "INVOICE_SEQ", nullable = false)
-    private Long invoiceSequence;
 
-    @Column(name = "LINE_NUMBER", nullable = false)
-    private Long lineNumber;
+    @EmbeddedId
+    InvoiceLineEmbeddable invoiceLineEmbeddable;
 
     @Column(name = "QUANTITY_INVOICED")
     private BigDecimal quantityInvoiced;
@@ -76,5 +71,8 @@ public class InvoiceLine {
 
     @Column(name = "PREPAYMENT_INVOICE_REF")
     private String prepaymentInvoiceRef;
+
+    @Transient
+    private List<Prepayment> prepaymentDetails;
 
 }

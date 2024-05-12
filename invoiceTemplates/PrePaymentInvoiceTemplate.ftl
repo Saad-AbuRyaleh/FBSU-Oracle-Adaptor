@@ -33,7 +33,7 @@
 <#list invoiceLines as product>
     {
     "quantity": "${product.quantityInvoiced?string("0.000000000")!}",
-    "productCode": "${product.productCode!}",
+    "productCode": "${cleanNumber(product_index+1)}_${product.productCode!}",
     "netAmount": "${product.lineAmount?string("0.0000")!}",
     "unitCost": "${product.unitSellingPrice?string("0.00000")!}",
     "taxPercentage": <#if product.taxRate??>"${product.taxRate?string("0")!}"<#else>null</#if>,
@@ -56,3 +56,6 @@
 "totalTaxAmount":<#if inv.totalTax??>"${inv.totalTax?string("0.00")!0.00}"<#else>null</#if>,
 "totalInvoiceAmount": "${inv.totalAmount?string("0.00")!}"
 }
+<#function cleanNumber input>
+    <#return input?replace("@", "")>
+</#function>

@@ -1,6 +1,14 @@
 {
-"invoiceIQReference": <#if originalInvoice??>"${originalInvoice.reference}"<#else>"${originalInvoice.invoiceId!}"</#if>,
+<#if isGroupReference?? && isGroupReference?c =="true">
+    "groupedInvoiceIQReferences": [
+    <#list groupedInvoiceIQReferences?split(",") as reference>
+        "${reference}"<#if reference_has_next>,</#if>
+    </#list>
+    ],
+</#if>
+"invoiceIQReference":"${invoiceQReference!}",
 "creditNoteNumber": "${inv.invoiceId!}",
+"creditNoteMode":"AMOUNT",
 "isHistorical": "${inv.isHistorical?c!}",
 "historicalInvoiceType":<#if inv.isHistorical && inv.invType??>"${inv.invType!}"<#else>null</#if>,
 "historicalCurrencyIsoCode": "SAR",
@@ -40,7 +48,7 @@
     "creditedQuantity": "${product.quantityInvoiced?string("0.0000")!}",
     "creditedTaxAmount": <#if product.totTax??>"${product.totTax?string("0.0000")!0.00}"<#else>null</#if>,
     "description": <#if product.description??>"${product.description?json_string!}"<#else>null</#if>,
-    "productCode": "${product.productCode!}",
+    "productCode": "${cleanNumber(product_index+1)}_${product.productCode!}",
     "historicalInvoiceLine":<#if inv.isHistorical>{
         "productName": <#if product.productName??>"${product.productName?json_string!}"<#elseif product.description??>"${product.description?json_string!}"<#else>null</#if>,
         "invoicedLineTotalAmountWithTax" :"${product.lineAmount?string("0.0000")!}",
@@ -57,3 +65,6 @@
 "creditReason": <#if inv.memoComment??>"${inv.memoComment?json_string!}"<#else>null</#if>,
 "narration": <#if inv.notes??>"${inv.notes?json_string!}"<#else>null</#if>
 }
+<#function cleanNumber input>
+    <#return input?replace("@", "")>
+</#function>

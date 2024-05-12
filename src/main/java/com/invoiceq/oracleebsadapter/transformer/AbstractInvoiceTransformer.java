@@ -5,10 +5,10 @@ import com.Invoiceq.connector.model.InvoiceType;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
-import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
+import com.invoiceq.oracleebsadapter.model.*;
 import com.invoiceq.oracleebsadapter.repository.InvoiceHeadersRepository;
 import com.invoiceq.oracleebsadapter.repository.InvoiceLineRepository;
+import com.invoiceq.oracleebsadapter.repository.PrepaymentRepository;
 import com.invoiceq.oracleebsadapter.service.OutwardInvoiceService;
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -49,7 +50,8 @@ public abstract class AbstractInvoiceTransformer<T> {
     @Autowired
     protected InvoiceHeadersRepository invoiceHeadersRepository;
 
-
+    @Autowired
+    protected PrepaymentRepository prepaymentRepository;
     public abstract List<T> transform(List<InvoiceHeader> invoices);
 
     protected Template getMarkerTemplate(String templateName) {
@@ -108,5 +110,107 @@ public abstract class AbstractInvoiceTransformer<T> {
         LOGGER.error("Something went wrong with Transforming Invoice [{}]", invoiceId);
         invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.TECHNICAL_FAILED, invoiceId);
         invoiceHeadersRepository.updateFailedStatus(invoiceId,message);
+    }
+    protected boolean checkTheLinkedInvoices(InvoiceHeader memo) {
+        String invoiceReferences = memo.getMemoNo();
+        String invoiceQReferences = memo.getMemoInvoiceQReference();
+        boolean isLinkedToValidInvoices = StringUtils.isNotBlank(invoiceReferences) || StringUtils.isNotBlank(invoiceQReferences);
+        if (isLinkedToValidInvoices){
+            return true;
+        }
+        updateStatusForUnlinkedMemo(memo);
+        return false;
+    }
+    private void updateStatusForUnlinkedMemo(InvoiceHeader memo) {
+        LOGGER.info("Update Status To [{}] For Unlinked Memo [{}]", ZatcaStatus.BUSINESS_FAILED,memo.getInvoiceId());
+        invoiceHeadersRepository.updateZatcaStatus(ZatcaStatus.BUSINESS_FAILED, memo.getInvoiceId());
+        String errorMessage = "The Memo#"+memo.getInvoiceId()+" Still Not Linked to Invoice";
+        invoiceHeadersRepository.updateFailedStatus(memo.getInvoiceId(),errorMessage);
+    }
+    protected Map <String,Object> retrieveGroupDetails (InvoiceHeader memo){
+        Map <String,Object> map = new HashMap<>();
+        String invoiceReferences = memo.getMemoNo();
+        String invoiceQReferences = memo.getMemoInvoiceQReference();
+        boolean isGroupReference= (StringUtils.isNotBlank(invoiceReferences) && invoiceReferences.contains(",")) || (StringUtils.isNotBlank(invoiceQReferences) && invoiceQReferences.contains(","));
+        String references = StringUtils.defaultIfBlank(invoiceQReferences, invoiceReferences);
+        String invoiceQReference = isGroupReference?references.split(",")[0]:references;
+        map.put("isGroupReference",isGroupReference);
+        map.put("GroupReference",references);
+        map.put("isHistorical",memo.getIsHistorical());
+        map.put("invoiceQReference",invoiceQReference);
+        return map;
+    }
+protected boolean isMemoReadyToSend(Map<String, Object> groupContext) {
+    boolean isHistorical = (boolean) groupContext.getOrDefault("isHistorical", false);
+    boolean isGroupReference = (boolean) groupContext.getOrDefault("isGroupReference", false);
+    String reference = (String) groupContext.getOrDefault("invoiceQReference","");
+    if (isHistorical) {
+        return true;
+    }
+
+    if (!isGroupReference) {
+        return isInvoiceReady(reference);
+    }
+
+    String[] references = groupContext.getOrDefault("GroupReference", "").toString().split(",");
+    return Arrays.stream(references)
+            .map(this::isInvoiceReady)
+            .reduce(false, (a, b) -> a || b);
+}
+
+    private boolean isInvoiceReady(String invoiceReference) {
+        Optional<InvoiceHeader> originalInvoice = invoiceHeadersRepository.findByReference(invoiceReference);
+        return originalInvoice.map(invoice -> invoice.getStatus() == ZatcaStatus.SUCCESS).orElse(false);
+    }
+    protected void addPrePaymentDetailsIfExists(List<InvoiceLine> invoiceLines) {
+        if (!CollectionUtils.isEmpty(invoiceLines)) {
+            invoiceLines.forEach(line -> {
+                line.setPrepaymentDetails(extractPrePaymentDetails(line));
+            });
+        }
+    }
+
+    protected List<Prepayment> extractPrePaymentDetails(InvoiceLine invoiceLine) {
+        List<Prepayment> prepaymentDetailsList = new ArrayList<>();
+        if (StringUtils.isNotBlank(invoiceLine.getPrepaymentInvoiceRef())){
+            String [] references = new String[0];
+            String prepaymentInvoiceRef= invoiceLine.getPrepaymentInvoiceRef();
+            if (prepaymentInvoiceRef.contains(",")){
+                references = prepaymentInvoiceRef.split(",");
+            }else {
+                references = new String[]{prepaymentInvoiceRef};
+            }
+            processPrepayment(references,prepaymentDetailsList,invoiceLine.getInvoiceLineEmbeddable());
+        }
+        return prepaymentDetailsList;
+    }
+
+    protected void processPrepayment(String[] references, List<Prepayment> prepaymentDetailsList, InvoiceLineEmbeddable invoiceLineEmbeddable) {
+        if (!CollectionUtils.isEmpty(Arrays.asList(references))){
+            for (String reference : references) {
+                Prepayment linePrepaymentDetails =new Prepayment();
+                Optional<Prepayment> prepaymentInfo = prepaymentRepository.findByInvoiceIdAndInvoiceSequenceAndLineNumber(reference,invoiceLineEmbeddable.getInvoiceSequence(),invoiceLineEmbeddable.getLineNumber());
+                if (prepaymentInfo.isPresent()){
+                    boolean isHistorical = prepaymentInfo.get().getIsHistorical();
+                    linePrepaymentDetails.setInvoiceId(prepaymentInfo.get().getInvoiceId());
+                    linePrepaymentDetails.setInvoiceQReference(StringUtils.defaultIfBlank(prepaymentInfo.get().getInvoiceQReference(),searchForInvoiceQReference(prepaymentInfo.get().getInvoiceId())));
+                    linePrepaymentDetails.setIsHistorical(isHistorical);
+                    linePrepaymentDetails.setInvoiceDate(prepaymentInfo.get().getInvoiceDate());
+                    linePrepaymentDetails.setPrePaymentInvoiceDate(LocalDateTime.parse(prepaymentInfo.get().getInvoiceDate(), inputFormatter).atZone(ZoneId.of("Asia/Riyadh")).format(outputFormatter));
+                    linePrepaymentDetails.setPrepaymentTaxAmount(prepaymentInfo.get().getPrepaymentTaxAmount());
+                    linePrepaymentDetails.setPrepaymentTaxableAmount(prepaymentInfo.get().getPrepaymentTaxableAmount());
+                }
+                prepaymentDetailsList.add(linePrepaymentDetails);
+            }
+
+        }
+    }
+
+    private String searchForInvoiceQReference(String invoiceId) {
+        Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(invoiceId);
+        if (invoiceHeader.isPresent()){
+            return invoiceHeader.get().getReference();
+        }
+        return "";
     }
 }
