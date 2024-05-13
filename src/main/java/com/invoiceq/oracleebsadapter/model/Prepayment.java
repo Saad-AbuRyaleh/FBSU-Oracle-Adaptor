@@ -36,9 +36,22 @@ public class Prepayment implements Serializable {
 
     @Column(name = "PREPAYMENT_INVOICE_REF")
     private String invoiceQReference;
+
     @Column(name = "LINE_NUMBER")
     private String lineNumber;
 
     @Transient
     private String prePaymentInvoiceDate;
+
+    @Transient
+    private BigDecimal prePaymentTaxRate;
+
+    @Transient
+    private String exemptionReasonCode;
+
+    @Transient
+    private String exemptionOtherTypeDesc;
+
+    @Transient
+    private Short prePaymentExemptionTaxPercentage;
 }

@@ -14,6 +14,7 @@ import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -187,9 +190,10 @@ protected boolean isMemoReadyToSend(Map<String, Object> groupContext) {
 
     protected void processPrepayment(String[] references, List<Prepayment> prepaymentDetailsList, InvoiceLineEmbeddable invoiceLineEmbeddable) {
         if (!CollectionUtils.isEmpty(Arrays.asList(references))){
-            for (String reference : references) {
+
+            for (int i = 0; i <references.length; i++) {
                 Prepayment linePrepaymentDetails =new Prepayment();
-                Optional<Prepayment> prepaymentInfo = prepaymentRepository.findByInvoiceIdAndInvoiceSequenceAndLineNumber(reference,invoiceLineEmbeddable.getInvoiceSequence(),invoiceLineEmbeddable.getLineNumber());
+                Optional<Prepayment> prepaymentInfo = prepaymentRepository.findByInvoiceIdAndInvoiceSequenceAndLineNumber(references[i],invoiceLineEmbeddable.getInvoiceSequence(),invoiceLineEmbeddable.getLineNumber());
                 if (prepaymentInfo.isPresent()){
                     boolean isHistorical = prepaymentInfo.get().getIsHistorical();
                     linePrepaymentDetails.setInvoiceId(prepaymentInfo.get().getInvoiceId());
@@ -199,11 +203,30 @@ protected boolean isMemoReadyToSend(Map<String, Object> groupContext) {
                     linePrepaymentDetails.setPrePaymentInvoiceDate(LocalDateTime.parse(prepaymentInfo.get().getInvoiceDate(), inputFormatter).atZone(ZoneId.of("Asia/Riyadh")).format(outputFormatter));
                     linePrepaymentDetails.setPrepaymentTaxAmount(prepaymentInfo.get().getPrepaymentTaxAmount());
                     linePrepaymentDetails.setPrepaymentTaxableAmount(prepaymentInfo.get().getPrepaymentTaxableAmount());
+                    checkIfThereIsExemption(linePrepaymentDetails,prepaymentInfo.get());
                 }
                 prepaymentDetailsList.add(linePrepaymentDetails);
             }
 
         }
+    }
+
+    private void checkIfThereIsExemption(Prepayment linePrepaymentDetails, Prepayment prepayment) {
+        String exemptionCode="";
+        String exemptionOtherTypeCodeDesc="";
+        short exemptionPercentage =0;
+        Optional<InvoiceHeader> invoiceHeader = invoiceHeadersRepository.findFirstByInvoiceIdOrderByInvoiceSequenceDesc(prepayment.getInvoiceId());
+        if (invoiceHeader.isPresent()){
+            InvoiceLine invoiceLine = invoiceHeader.get().getInvoiceLines().get(0);
+            exemptionCode=invoiceLine.getExemptionCode();
+            exemptionOtherTypeCodeDesc = invoiceLine.getExemptionOtherTypeDesc();
+            exemptionPercentage = invoiceLine.getExemptionPercentage();
+
+        }
+        linePrepaymentDetails.setPrePaymentTaxRate(calculateTaxRate(prepayment));
+        linePrepaymentDetails.setPrePaymentExemptionTaxPercentage(exemptionPercentage);
+        linePrepaymentDetails.setExemptionReasonCode(exemptionCode);
+        linePrepaymentDetails.setExemptionOtherTypeDesc(exemptionOtherTypeCodeDesc);
     }
 
     private String searchForInvoiceQReference(String invoiceId) {
@@ -212,5 +235,19 @@ protected boolean isMemoReadyToSend(Map<String, Object> groupContext) {
             return invoiceHeader.get().getReference();
         }
         return "";
+    }
+    private BigDecimal calculateTaxRate(Prepayment prepayment) {
+        BigDecimal taxRate;
+        BigDecimal prepaymentTaxAmount = prepayment.getPrepaymentTaxAmount();
+        BigDecimal prepaymentTaxableAmount = prepayment.getPrepaymentTaxableAmount();
+
+        if (prepaymentTaxableAmount.compareTo(BigDecimal.ZERO) != 0) {
+            taxRate = prepaymentTaxAmount.divide(prepaymentTaxableAmount, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        } else {
+            taxRate = BigDecimal.ZERO;
+        }
+
+        return taxRate;
     }
 }

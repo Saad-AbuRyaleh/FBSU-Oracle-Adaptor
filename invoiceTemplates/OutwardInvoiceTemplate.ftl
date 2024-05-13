@@ -39,8 +39,12 @@
             "isHistorical": <#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"true"<#else>"false"</#if>,
             "prePaymentTaxAmount": "${prepaymentDetail.prepaymentTaxAmount?string("0.0000")!}",
             "prePaymentTaxableAmount": "${prepaymentDetail.prepaymentTaxableAmount?string("0.0000")!}",
-            "prepaymentInvoiceRef":<#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"${prepaymentDetail.invoiceId!}"<#else>"${prepaymentDetail.invoiceQReference!}"</#if>
-        }<#if prepaymentDetail_has_next>,</#if>
+            "prepaymentInvoiceRef":<#if prepaymentDetail.isHistorical?? && prepaymentDetail.isHistorical?string =="true">"${prepaymentDetail.invoiceId!}"<#else>"${prepaymentDetail.invoiceQReference!}"</#if>,
+            "exemptionPercentage": <#if prepaymentDetail.prePaymentTaxRate == 0>100<#else>null</#if>,
+            "exemptionCode":<#if prepaymentDetail.exemptionReasonCode??>"${prepaymentDetail.exemptionReasonCode!}"<#else>null</#if>,
+            "exemptionOtherTypeDesc":<#if prepaymentDetail.exemptionOtherTypeDesc??>"${prepaymentDetail.exemptionOtherTypeDesc!}"<#else>null</#if>,
+            "taxRate": <#if prepaymentDetail.prePaymentTaxRate??>"${prepaymentDetail.prePaymentTaxRate?string("0")!}"<#else>null</#if>
+            }<#if prepaymentDetail_has_next>,</#if>
         </#list>
     ],
     </#if>

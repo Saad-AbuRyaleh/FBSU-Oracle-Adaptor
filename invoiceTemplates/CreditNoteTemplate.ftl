@@ -49,6 +49,9 @@
     "creditedTaxAmount": <#if product.totTax??>"${product.totTax?string("0.0000")!0.00}"<#else>null</#if>,
     "description": <#if product.description??>"${product.description?json_string!}"<#else>null</#if>,
     "productCode": "${cleanNumber(product_index+1)}_${product.productCode!}",
+    "exemptionPercentage":  <#if product.taxRate?? && product.taxRate == 0>100<#else>null</#if>,
+    "exemptionReasonCode":<#if product.exemptionCode??>"${product.exemptionCode!}"<#else>null</#if>,
+    "exemptionOtherTypeDesc":<#if product.exemptionOtherTypeDesc??>"${product.exemptionOtherTypeDesc!}"<#else>null</#if>,
     "historicalInvoiceLine":<#if inv.isHistorical>{
         "productName": <#if product.productName??>"${product.productName?json_string!}"<#elseif product.description??>"${product.description?json_string!}"<#else>null</#if>,
         "invoicedLineTotalAmountWithTax" :"${product.lineAmount?string("0.0000")!}",
