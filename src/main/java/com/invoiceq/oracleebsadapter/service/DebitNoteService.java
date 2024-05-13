@@ -17,6 +17,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -35,20 +37,24 @@ public class DebitNoteService {
 
     @Value("${invoiceq.connector.channelId}")
     private String channelId;
+
+    @Value("${page.size}")
+    private int pageSize;
     private final static String DEBIT_TYPE_CODE = "383";
     private final InvoiceHeadersRepository invoiceHeadersRepository;
     private final InvoiceqConnector invoiceqConnector;
     private final InvoiceAttachmentRepository invoiceAttachmentRepository;
     private final DebitNoteTransformer transformer;
     private final StorageManager storageManager;
-    public void handlePendingDebits() {
-        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, DEBIT_TYPE_CODE);
+    public int handlePendingDebits(int pageCount) {
+        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, DEBIT_TYPE_CODE, PageRequest.of(pageCount ,pageSize, Sort.Direction.ASC,"invoiceSequence"));
         if (invoiceHeaderList.isPresent() && !CollectionUtils.isEmpty(invoiceHeaderList.get())) {
             List<DebitNoteRequest> debitNoteRequests = transformer.transform(invoiceHeaderList.get());
             for (int i = 0; i < debitNoteRequests.size(); i++) {
                 doIQIntegration(debitNoteRequests.get(i));
             }
         }
+        return invoiceHeaderList.isPresent()&&!CollectionUtils.isEmpty(invoiceHeaderList.get())?pageCount+1:-1;
     }
 
     private void doIQIntegration(DebitNoteRequest debitNoteRequest) {

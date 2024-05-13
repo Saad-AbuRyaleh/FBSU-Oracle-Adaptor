@@ -17,6 +17,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -38,6 +40,9 @@ public class CreditNoteService {
     @Value("${invoiceq.connector.channelId}")
     private String channelId;
 
+    @Value("${page.size}")
+    private int pageSize;
+
     private final InvoiceHeadersRepository invoiceHeadersRepository;
     private final CreditNoteTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
@@ -45,14 +50,15 @@ public class CreditNoteService {
     private final StorageManager storageManager;
     private final static String CREDIT_TYPE_CODE = "381";
 
-    public void handlePendingCredits() {
-        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, CREDIT_TYPE_CODE);
+    public int handlePendingCredits(int pageCount) {
+        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, CREDIT_TYPE_CODE, PageRequest.of(pageCount ,pageSize, Sort.Direction.ASC,"invoiceSequence"));
         if (invoiceHeaderList.isPresent() && !CollectionUtils.isEmpty(invoiceHeaderList.get())) {
             List<CreditNoteRequest> creditNoteRequests = transformer.transform(invoiceHeaderList.get());
             for (int i = 0; i < creditNoteRequests.size(); i++) {
                 doIQIntegration(creditNoteRequests.get(i));
             }
         }
+        return invoiceHeaderList.isPresent()&&!CollectionUtils.isEmpty(invoiceHeaderList.get())?pageCount+1:-1;
     }
 
     private void doIQIntegration(CreditNoteRequest creditNoteRequest) {

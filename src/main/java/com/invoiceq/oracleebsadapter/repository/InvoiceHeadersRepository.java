@@ -3,6 +3,7 @@ package com.invoiceq.oracleebsadapter.repository;
 
 import com.invoiceq.oracleebsadapter.model.InvoiceHeader;
 import com.invoiceq.oracleebsadapter.model.ZatcaStatus;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 public interface InvoiceHeadersRepository extends JpaRepository<InvoiceHeader, Long> {
 
-    Optional<List<InvoiceHeader>> findByStatusAndInvoiceType(ZatcaStatus status, String invoiceType);
+    Optional<List<InvoiceHeader>> findByStatusAndInvoiceType(ZatcaStatus status, String invoiceType, PageRequest pageRequest);
 
     Optional<InvoiceHeader> findFirstByInvoiceIdOrderByInvoiceSequenceDesc(String invoiceId);
 

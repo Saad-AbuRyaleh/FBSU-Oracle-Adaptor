@@ -29,6 +29,7 @@
         </layout>
     </appender>
     <logger name="org.springframework.integration.smb" level="INFO"/>
+    <logger name="com.invoiceq.oracleebsadapter" level="INFO"/>
     <logger name="com.Invoiceq.connector" level="INFO">
         <appender-ref ref="DB" />
     </logger>

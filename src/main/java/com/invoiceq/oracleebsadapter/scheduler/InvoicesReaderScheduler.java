@@ -52,10 +52,14 @@ public class InvoicesReaderScheduler {
         if (prePaymentTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             prePaymentTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned prePayment invoices");
-                try {
-                    prePaymentService.handlePendingInvoices();
-                } catch (Exception e) {
-                    LOGGER.error("error happened", e);
+                int pageCount=0;
+                while(pageCount!=-1) {
+                    try {
+                        pageCount=prePaymentService.handlePendingInvoices(pageCount);
+                    } catch (Exception e) {
+                        LOGGER.error("error happened", e);
+                        pageCount=-1;
+                    }
                 }
                 LOGGER.info("Finish checking for unsigned prePayment invoices");
             });
@@ -68,10 +72,14 @@ public class InvoicesReaderScheduler {
         if (outwardTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             outwardTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned invoices");
-                try {
-                    outwardInvoiceService.handlePendingInvoices();
-                } catch (Exception e) {
-                    LOGGER.error("error happened", e);
+                int pageCount=0;
+                while(pageCount!=-1) {
+                    try {
+                        pageCount=outwardInvoiceService.handlePendingInvoices(pageCount);
+                    } catch (Exception e) {
+                        LOGGER.error("error happened", e);
+                        pageCount=-1;
+                    }
                 }
                 LOGGER.info("Finish checking for unsigned invoices");
             });
@@ -85,10 +93,14 @@ public class InvoicesReaderScheduler {
         if (creditTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             creditTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned credit notes");
-                try {
-                    creditNoteService.handlePendingCredits();
-                } catch (Exception e) {
-                    LOGGER.error("error happened", e);
+                int pageCount=0;
+                while(pageCount!=-1) {
+                    try {
+                        pageCount=creditNoteService.handlePendingCredits(pageCount);
+                    } catch (Exception e) {
+                        LOGGER.error("error happened", e);
+                        pageCount=-1;
+                    }
                 }
                 LOGGER.info("Finish checking for unsigned credit notes");
             });
@@ -99,10 +111,14 @@ public class InvoicesReaderScheduler {
         if (debitTaskExecutor.getActiveCount() == 0 && nodeLoggerService.isEnabledToRun(serviceCode)) {
             debitTaskExecutor.execute(() -> {
                 LOGGER.info("Start check for unsigned debit notes");
-                try {
-                    debitNoteService.handlePendingDebits();
-                } catch (Exception e) {
-                    LOGGER.error("error happened", e);
+                int pageCount=0;
+                while(pageCount!=-1) {
+                    try {
+                        pageCount=debitNoteService.handlePendingDebits(pageCount);
+                    } catch (Exception e) {
+                        LOGGER.error("error happened", e);
+                        pageCount=-1;
+                    }
                 }
                 LOGGER.info("Finish checking for unsigned debit notes");
             });

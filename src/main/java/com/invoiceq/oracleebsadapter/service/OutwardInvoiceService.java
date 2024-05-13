@@ -17,6 +17,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -32,6 +34,9 @@ public class OutwardInvoiceService {
     @Value("${invoiceq.connector.channelId}")
     private String channelId;
 
+    @Value("${page.size}")
+    private int pageSize;
+
     private final InvoiceHeadersRepository invoiceHeadersRepository;
     private final OutwardInvoiceTransformer transformer;
     private final InvoiceqConnector invoiceqConnector;
@@ -41,14 +46,16 @@ public class OutwardInvoiceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OutwardInvoiceService.class);
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    public void handlePendingInvoices() {
-        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, INVOICE_TYPE_CODE);
+    public int handlePendingInvoices(int pageCount) {
+        Optional<List<InvoiceHeader>> invoiceHeaderList = invoiceHeadersRepository.findByStatusAndInvoiceType(ZatcaStatus.PENDING, INVOICE_TYPE_CODE, PageRequest.of(pageCount ,pageSize, Sort.Direction.ASC,"invoiceSequence"));
         if (invoiceHeaderList.isPresent() && !CollectionUtils.isEmpty(invoiceHeaderList.get())) {
             List<UploadOutwardInvoiceRequest> outwardInvoiceRequests = transformer.transform(invoiceHeaderList.get());
             for (int i = 0; i < outwardInvoiceRequests.size(); i++) {
                 doIQIntegration(outwardInvoiceRequests.get(i));
             }
         }
+        return invoiceHeaderList.isPresent()&&!CollectionUtils.isEmpty(invoiceHeaderList.get())?pageCount+1:-1;
+
     }
 
     private void doIQIntegration(UploadOutwardInvoiceRequest uploadOutwardInvoiceRequest) {
